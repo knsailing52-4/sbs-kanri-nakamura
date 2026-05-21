@@ -111,6 +111,20 @@ body {
   margin-top: 4px;
 }
 
+.btn-import {
+  background: rgba(255,255,255,.18);
+  color: var(--white);
+  border: 1px solid rgba(255,255,255,.4);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+  white-space: nowrap;
+}
+.btn-import:hover { background: rgba(255,255,255,.32); }
+
 .btn-list-view {
   background: rgba(255,255,255,.18);
   color: var(--white);

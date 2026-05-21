@@ -510,3 +510,224 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("detailModal").addEventListener("click", (e) => { if (e.target.id === "detailModal") closeDetailModal(); });
   document.getElementById("deletePassword").addEventListener("keydown", (e) => { if (e.key === "Enter") confirmDelete(); });
 });
+
+// =============================================
+// Excel 一括取込
+// =============================================
+
+// 支店名マッピング（Excelの支店列 → branchKey）
+const BRANCH_NAME_MAP = {
+  "名古屋": "nagoya",
+  "札幌":   "sapporo",
+  "仙台":   "sendai",
+};
+
+// 対象期
+const TARGET_TERMS = ["79期", "80期"];
+
+// 対象SFA確度
+const TARGET_SFA = ["商談", "顧客注文"];
+
+let importData = [];
+
+function openImportModal() {
+  importData = [];
+  document.getElementById("importFileInput").value = "";
+  document.getElementById("importPreview").style.display = "none";
+  document.getElementById("importNoData").style.display = "none";
+  document.getElementById("importError").textContent = "";
+  document.getElementById("importExecuteBtn").disabled = true;
+  document.getElementById("importModal").classList.add("open");
+}
+
+function closeImportModal() {
+  document.getElementById("importModal").classList.remove("open");
+  importData = [];
+}
+
+function previewImport(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  document.getElementById("importError").textContent = "";
+  document.getElementById("importPreview").style.display = "none";
+  document.getElementById("importNoData").style.display = "none";
+  document.getElementById("importExecuteBtn").disabled = true;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: "array" });
+
+      // 「案件リスト」シートを探す
+      const sheetName = workbook.SheetNames.find(n => n === "案件リスト");
+      if (!sheetName) {
+        document.getElementById("importError").textContent = "「案件リスト」シートが見つかりません";
+        return;
+      }
+
+      const sheet = workbook.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+
+      // ヘッダー行を探す（「病院名」を含む行）
+      let headerRowIdx = -1;
+      let headers = [];
+      for (let i = 0; i < Math.min(rows.length, 10); i++) {
+        const rowStr = rows[i].join("\t");
+        if (rowStr.includes("病院名")) {
+          headerRowIdx = i;
+          headers = rows[i].map(h => String(h).replace(/\s+/g, ""));
+          break;
+        }
+      }
+
+      if (headerRowIdx === -1) {
+        document.getElementById("importError").textContent = "ヘッダー行が見つかりません";
+        return;
+      }
+
+      // 列インデックスを取得
+      const colIdx = (names) => {
+        for (const name of names) {
+          const idx = headers.findIndex(h => h.includes(name));
+          if (idx !== -1) return idx;
+        }
+        return -1;
+      };
+
+      const COL = {
+        hospitalName:  colIdx(["病院名"]),
+        kyokaBedNum:   colIdx(["許可病床数"]),
+        mainPerson:    colIdx(["支店担当", "支店担当1"]),
+        subPerson:     colIdx(["支店担当2"]),
+        nurseCall:     colIdx(["NCメーカー", "ナースコールメーカー"]),
+        nurseCallModel:colIdx(["ナースコールモデル"]),
+        electronicKarte: colIdx(["電カルベンダー"]),
+        karteModel:    colIdx(["電子カルテモデル"]),
+        memo:          colIdx(["システム概要"]),
+        branchName:    colIdx(["支店"]),
+        sfaStatus:     colIdx(["SFA確度"]),
+        salesTerm:     colIdx(["売上予定期"]),
+      };
+
+      const currentBranchLabel = BRANCHES[currentBranch].label.replace("支店", "");
+
+      // データ行をフィルタリング
+      importData = [];
+      for (let i = headerRowIdx + 1; i < rows.length; i++) {
+        const row = rows[i];
+        const hospitalName = String(row[COL.hospitalName] || "").trim();
+        if (!hospitalName) continue;
+
+        const branchCell  = String(row[COL.branchName]  || "").trim();
+        const sfaCell     = String(row[COL.sfaStatus]   || "").trim();
+        const termCell    = String(row[COL.salesTerm]   || "").trim();
+
+        // フィルター条件チェック
+        const branchKey = BRANCH_NAME_MAP[branchCell];
+        if (!branchKey) continue;
+        if (branchKey !== currentBranch) continue;
+        if (!TARGET_SFA.some(s => sfaCell.includes(s))) continue;
+        if (!TARGET_TERMS.some(t => termCell.includes(t))) continue;
+
+        const nurseCall = [
+          row[COL.nurseCall]      || "",
+          row[COL.nurseCallModel] || ""
+        ].filter(Boolean).join("／");
+
+        const electronicKarte = [
+          row[COL.electronicKarte] || "",
+          row[COL.karteModel]      || ""
+        ].filter(Boolean).join("／");
+
+        importData.push({
+          hospitalName,
+          kyokaBedNum:     String(row[COL.kyokaBedNum]  || "").trim(),
+          mainPerson:      String(row[COL.mainPerson]   || "").trim(),
+          subPerson:       String(row[COL.subPerson]    || "").trim(),
+          nurseCall,
+          electronicKarte,
+          memo:            String(row[COL.memo]         || "").trim(),
+          goLiveDate:      "",
+          currentTask:     0,
+          createdAt:       new Date().toISOString(),
+          // プレビュー用
+          _sfaStatus:  sfaCell,
+          _salesTerm:  termCell,
+        });
+      }
+
+      // プレビュー表示
+      if (importData.length === 0) {
+        document.getElementById("importNoData").style.display = "block";
+        return;
+      }
+
+      document.getElementById("importCount").textContent = importData.length;
+      const tbody = document.getElementById("importPreviewBody");
+      tbody.innerHTML = importData.map(d => `
+        <tr style="border-bottom:1px solid #f0f2f5;">
+          <td style="padding:7px 10px;font-weight:600;">${escapeHtml(d.hospitalName)}</td>
+          <td style="padding:7px 10px;">${escapeHtml(d.mainPerson || "―")}</td>
+          <td style="padding:7px 10px;">${escapeHtml(d.kyokaBedNum || "―")}</td>
+          <td style="padding:7px 10px;"><span style="background:#e8f0fc;color:#0f3d82;padding:2px 6px;border-radius:4px;font-size:11px;">${escapeHtml(d._sfaStatus)}</span></td>
+          <td style="padding:7px 10px;"><span style="background:#e6f4ee;color:#1b8a5a;padding:2px 6px;border-radius:4px;font-size:11px;">${escapeHtml(d._salesTerm)}</span></td>
+          <td style="padding:7px 10px;">${escapeHtml(d.nurseCall || "―")}</td>
+          <td style="padding:7px 10px;">${escapeHtml(d.electronicKarte || "―")}</td>
+        </tr>
+      `).join("");
+
+      document.getElementById("importPreview").style.display = "block";
+      document.getElementById("importExecuteBtn").disabled = false;
+
+    } catch (err) {
+      console.error(err);
+      document.getElementById("importError").textContent = "ファイルの読み込みに失敗しました: " + err.message;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+async function executeImport() {
+  if (!importData.length) return;
+
+  const btn = document.getElementById("importExecuteBtn");
+  btn.disabled = true;
+  btn.textContent = "取込中...";
+
+  const col = BRANCHES[currentBranch].collection;
+  let successCount = 0;
+  let errorCount = 0;
+
+  for (const item of importData) {
+    // _sfaStatus, _salesTerm はFirestoreに保存しない
+    const { _sfaStatus, _salesTerm, ...data } = item;
+    try {
+      await db.collection(col).add(data);
+      successCount++;
+    } catch (err) {
+      console.error(err);
+      errorCount++;
+    }
+  }
+
+  btn.textContent = "取込実行";
+  closeImportModal();
+
+  if (errorCount === 0) {
+    showToast(`✅ ${successCount}件の案件を取込みました`);
+  } else {
+    showToast(`⚠️ ${successCount}件成功、${errorCount}件失敗`, "error");
+  }
+}
+
+// importModalのオーバーレイクリックで閉じる
+document.addEventListener("DOMContentLoaded", () => {
+  const importModal = document.getElementById("importModal");
+  if (importModal) {
+    importModal.addEventListener("click", (e) => {
+      if (e.target.id === "importModal") closeImportModal();
+    });
+  }
+});
