@@ -1,5 +1,5 @@
 // =============================================
-// 名古屋支店 全ステータス一覧 - list.js
+// 統合版 全ステータス一覧 - list.js
 // =============================================
 
 const TASKS = [
@@ -16,26 +16,39 @@ const TASKS = [
   "11 稼働後フォロー",
 ];
 
-const STAFF = [
-  "滝澤 充", "田中 美春", "齋藤 茂樹", "西尾 駿志", "萬代 さくら",
-  "小澤 聖也", "本間 陸", "その他",
-];
+const BRANCHES = {
+  nagoya: {
+    label: "名古屋支店",
+    collection: "nagoya_projects",
+    color: "#1a5cb8",
+    staff: ["滝澤 充", "田中 美春", "齋藤 茂樹", "西尾 駿志", "萬代 さくら", "小澤 聖也", "本間 陸", "その他"],
+  },
+  sapporo: {
+    label: "札幌支店",
+    collection: "sapporo_projects",
+    color: "#0077b6",
+    staff: ["山田 翼", "常国 広平", "河島 俊", "篠川 陽一", "吉川 練", "その他"],
+  },
+  sendai: {
+    label: "仙台支店",
+    collection: "sendai_projects",
+    color: "#2d6a4f",
+    staff: ["村田 祐基", "弓掛 年晃", "福島 義規", "宮川 知己", "小坂 冬喜", "関堂 崇", "その他"],
+  },
+};
 
+let currentBranch = "nagoya";
 let allProjects = [];
 let searchQuery = "";
 let filterPerson = "";
 let filterStatus = "";
+let unsubscribe = null;
 
-// =============================================
-// 遅延判定
-// =============================================
 function checkDelay(project) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
   const live = new Date(project.goLiveDate);
   const daysUntilLive = Math.ceil((live - today) / (1000 * 60 * 60 * 24));
   const t = project.currentTask;
-
   if (t >= TASKS.length) return "completed";
   if (t <= 9 && daysUntilLive < -1) return "warning";
   if (t < 8 && daysUntilLive <= 170) return "delay";
@@ -55,9 +68,6 @@ function statusLabel(status) {
   }
 }
 
-// =============================================
-// テーブル描画
-// =============================================
 function renderTable() {
   const tbody = document.getElementById("tableBody");
 
@@ -73,8 +83,7 @@ function renderTable() {
 
   const priority = { delay: 0, warning: 1, "": 2, completed: 3 };
   filtered.sort((a, b) => {
-    const pa = priority[checkDelay(a)];
-    const pb = priority[checkDelay(b)];
+    const pa = priority[checkDelay(a)]; const pb = priority[checkDelay(b)];
     if (pa !== pb) return pa - pb;
     return new Date(a.goLiveDate) - new Date(b.goLiveDate);
   });
@@ -91,23 +100,18 @@ function renderTable() {
     const { text, cls } = statusLabel(status);
     const isCompleted = p.currentTask >= TASKS.length;
     const taskLabel = isCompleted ? "✅ 全工程完了" : (TASKS[p.currentTask] || "―");
-
     const live = new Date(p.goLiveDate);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
     const daysUntilLive = p.goLiveDate ? Math.ceil((live - today) / (1000 * 60 * 60 * 24)) : null;
     const liveFormatted = p.goLiveDate
       ? live.toLocaleDateString("ja-JP", { year: "numeric", month: "2-digit", day: "2-digit" })
       : "―";
-
-    let daysText = "―";
-    let daysCls = "";
+    let daysText = "―", daysCls = "";
     if (daysUntilLive !== null) {
-      if (daysUntilLive > 0)       { daysText = `${daysUntilLive} 日`; }
+      if (daysUntilLive > 0) daysText = `${daysUntilLive} 日`;
       else if (daysUntilLive === 0) { daysText = "本日"; daysCls = "days-today"; }
-      else                          { daysText = `+${Math.abs(daysUntilLive)} 日経過`; daysCls = "days-past"; }
+      else { daysText = `+${Math.abs(daysUntilLive)} 日経過`; daysCls = "days-past"; }
     }
-
     return `
       <tr class="table-row-${status || 'normal'}">
         <td><span class="${cls}">${text}</span></td>
@@ -118,16 +122,14 @@ function renderTable() {
         <td>${escapeHtml(p.mainPerson || "―")}</td>
         <td>${escapeHtml(p.subPerson || "―")}</td>
         <td class="cell-memo">${escapeHtml(p.memo || "")}</td>
-      </tr>
-    `;
+      </tr>`;
   }).join("");
 }
 
-// =============================================
-// Firestore リアルタイム同期
-// =============================================
 function initFirestore() {
-  db.collection("projects")
+  if (unsubscribe) unsubscribe();
+  const collection = BRANCHES[currentBranch].collection;
+  unsubscribe = db.collection(collection)
     .orderBy("goLiveDate", "asc")
     .onSnapshot(
       (snapshot) => {
@@ -135,55 +137,61 @@ function initFirestore() {
         renderTable();
       },
       (error) => {
-        console.error("Firestore error:", error);
+        console.error(error);
         document.getElementById("tableBody").innerHTML =
           `<tr><td colspan="8" class="loading-cell">データ取得に失敗しました</td></tr>`;
       }
     );
 }
 
-// =============================================
-// 詳細ポップアップ
-// =============================================
+function switchBranch(branchKey) {
+  currentBranch = branchKey;
+  const branch = BRANCHES[branchKey];
+  document.querySelector(".app-header").style.background =
+    `linear-gradient(135deg, ${branch.color} 0%, ${adjustColor(branch.color, -20)} 100%)`;
+  document.getElementById("backBtn").href = `index.html?branch=${branchKey}`;
+  updateStaffFilter();
+  filterPerson = "";
+  filterStatus = "";
+  document.getElementById("staffFilter").value = "";
+  document.getElementById("statusFilter").value = "";
+  initFirestore();
+  localStorage.setItem("selectedBranch", branchKey);
+}
+
+function adjustColor(hex, amount) {
+  const num = parseInt(hex.replace("#", ""), 16);
+  const r = Math.min(255, Math.max(0, (num >> 16) + amount));
+  const g = Math.min(255, Math.max(0, ((num >> 8) & 0xff) + amount));
+  const b = Math.min(255, Math.max(0, (num & 0xff) + amount));
+  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+}
+
+function updateStaffFilter() {
+  const sel = document.getElementById("staffFilter");
+  const staff = BRANCHES[currentBranch].staff;
+  sel.innerHTML = `<option value="">全員表示</option>` +
+    staff.map((s) => `<option value="${s}">${s}</option>`).join("");
+}
+
 function openDetailModal(id) {
   const p = allProjects.find((x) => x.id === id);
   if (!p) return;
-
   document.getElementById("detailTitle").textContent = p.hospitalName || "施設詳細";
-
   const rows = [
-    { label: "稼働日（予定含む）",              value: p.goLiveDate || "" },
-    { label: "施設名",                           value: p.hospitalName || "" },
-    { label: "メイン担当",                       value: p.mainPerson || "" },
-    { label: "経営主体",                         value: p.keieiShukai || "" },
-    { label: "許可病床数",                       value: p.kyokaBedNum || "" },
-    { label: "病棟構成",                         value: p.byokoKosei || "" },
-    { label: "導入病棟",                         value: p.donyuByoko || "" },
-    { label: "導入病床数",                       value: p.donyuBedNum || "" },
-    { label: "ベッドサイド端末（既存/新規台数）", value: p.bedsideTerminal || "" },
-    { label: "眠りSCAN（既存/新規台数）",        value: p.nemiriScan || "" },
-    { label: "離床CATCH（既存/新規台数）",       value: p.rishoCatch || "" },
-    { label: "Wi-Fiベッドナビ（既存/新規台数）", value: p.wifiNav || "" },
-    { label: "タブレット設置位置",               value: p.tabletPos || "" },
-    { label: "電子カルテ（ベンダー/機種）",      value: p.electronicKarte || "" },
-    { label: "ナースコール（メーカー/機種）",    value: p.nurseCall || "" },
-    { label: "周辺連携機能",                     value: p.shuhenRenkei || "" },
-    { label: "スケジュール状況",                 value: p.scheduleStatus || "" },
-    { label: "備考",                             value: p.memo || "" },
+    ["稼働日（予定含む）", p.goLiveDate], ["施設名", p.hospitalName], ["メイン担当", p.mainPerson],
+    ["経営主体", p.keieiShukai], ["許可病床数", p.kyokaBedNum], ["病棟構成", p.byokoKosei],
+    ["導入病棟", p.donyuByoko], ["導入病床数", p.donyuBedNum],
+    ["ベッドサイド端末（既存/新規台数）", p.bedsideTerminal], ["眠りSCAN（既存/新規台数）", p.nemiriScan],
+    ["離床CATCH（既存/新規台数）", p.rishoCatch], ["Wi-Fiベッドナビ（既存/新規台数）", p.wifiNav],
+    ["タブレット設置位置", p.tabletPos], ["電子カルテ（ベンダー/機種）", p.electronicKarte],
+    ["ナースコール（メーカー/機種）", p.nurseCall], ["周辺連携機能", p.shuhenRenkei],
+    ["スケジュール状況", p.scheduleStatus], ["備考", p.memo],
   ];
-
   document.getElementById("detailBody").innerHTML = `
-    <table class="detail-table">
-      <tbody>
-        ${rows.map(r => `
-          <tr>
-            <th>${escapeHtml(r.label)}</th>
-            <td>${r.value ? escapeHtml(r.value) : '<span style="color:#9aa5b4">未入力</span>'}</td>
-          </tr>
-        `).join("")}
-      </tbody>
-    </table>
-  `;
+    <table class="detail-table"><tbody>
+      ${rows.map(([l, v]) => `<tr><th>${escapeHtml(l)}</th><td>${v ? escapeHtml(v) : '<span style="color:#9aa5b4">未入力</span>'}</td></tr>`).join("")}
+    </tbody></table>`;
   document.getElementById("detailModal").classList.add("open");
 }
 
@@ -191,52 +199,38 @@ function closeDetailModal() {
   document.getElementById("detailModal").classList.remove("open");
 }
 
-// =============================================
-// 検索・フィルタ
-// =============================================
-function initFilters() {
-  document.getElementById("searchInput").addEventListener("input", (e) => {
-    searchQuery = e.target.value;
-    renderTable();
-  });
-
-  const staffSel = document.getElementById("staffFilter");
-  staffSel.innerHTML = `<option value="">全員表示</option>` +
-    STAFF.map((s) => `<option value="${s}">${s}</option>`).join("");
-  staffSel.addEventListener("change", (e) => {
-    filterPerson = e.target.value;
-    renderTable();
-  });
-
-  document.getElementById("statusFilter").addEventListener("change", (e) => {
-    filterStatus = e.target.value;
-    renderTable();
-  });
-}
-
-// =============================================
-// ユーティリティ
-// =============================================
 function escapeHtml(str) {
   if (!str) return "";
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
-function showToast(msg, type = "success") {
-  const toast = document.getElementById("toast");
-  toast.textContent = msg;
-  toast.className = `toast toast-${type} show`;
-  setTimeout(() => toast.classList.remove("show"), 3000);
-}
-
-// =============================================
-// 初期化
-// =============================================
 document.addEventListener("DOMContentLoaded", () => {
-  initFilters();
-  initFirestore();
+  // URLパラメータから支店を取得
+  const params = new URLSearchParams(window.location.search);
+  const branchParam = params.get("branch");
+  const saved = branchParam || localStorage.getItem("selectedBranch");
+  if (saved && BRANCHES[saved]) {
+    currentBranch = saved;
+    document.getElementById("branchSelect").value = saved;
+  }
 
+  document.getElementById("searchInput").addEventListener("input", (e) => {
+    searchQuery = e.target.value; renderTable();
+  });
+  document.getElementById("staffFilter").addEventListener("change", (e) => {
+    filterPerson = e.target.value; renderTable();
+  });
+  document.getElementById("statusFilter").addEventListener("change", (e) => {
+    filterStatus = e.target.value; renderTable();
+  });
+  document.getElementById("branchSelect").addEventListener("change", (e) => {
+    document.getElementById("searchInput").value = "";
+    searchQuery = "";
+    switchBranch(e.target.value);
+  });
   document.getElementById("detailModal").addEventListener("click", (e) => {
     if (e.target.id === "detailModal") closeDetailModal();
   });
+
+  switchBranch(currentBranch);
 });

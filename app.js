@@ -1,5 +1,6 @@
 // =============================================
-// 名古屋支店 案件管理ツール - app.js
+// 統合版 案件管理ツール - app.js
+// 対応支店：名古屋・札幌・仙台
 // =============================================
 
 const TASKS = [
@@ -16,14 +17,67 @@ const TASKS = [
   "11 稼働後フォロー",
 ];
 
-const STAFF = [
-  "滝澤 充", "田中 美春", "齋藤 茂樹", "西尾 駿志", "萬代 さくら",
-  "小澤 聖也", "本間 陸", "その他",
-];
+// 支店マスターデータ
+const BRANCHES = {
+  nagoya: {
+    label: "名古屋支店",
+    collection: "nagoya_projects",
+    color: "#1a5cb8",
+    staff: ["滝澤 充", "田中 美春", "齋藤 茂樹", "西尾 駿志", "萬代 さくら", "小澤 聖也", "本間 陸", "その他"],
+  },
+  sapporo: {
+    label: "札幌支店",
+    collection: "sapporo_projects",
+    color: "#0077b6",
+    staff: ["山田 翼", "常国 広平", "河島 俊", "篠川 陽一", "吉川 練", "その他"],
+  },
+  sendai: {
+    label: "仙台支店",
+    collection: "sendai_projects",
+    color: "#2d6a4f",
+    staff: ["村田 祐基", "弓掛 年晃", "福島 義規", "宮川 知己", "小坂 冬喜", "関堂 崇", "その他"],
+  },
+};
 
+const DELETE_PASSWORD = "0000";
+
+let currentBranch = "nagoya";
 let allProjects = [];
 let searchQuery = "";
 let filterPerson = "";
+let unsubscribe = null;
+
+// =============================================
+// 支店切り替え
+// =============================================
+function switchBranch(branchKey) {
+  currentBranch = branchKey;
+  const branch = BRANCHES[branchKey];
+
+  // ヘッダーカラー変更
+  document.querySelector(".app-header").style.background =
+    `linear-gradient(135deg, ${branch.color} 0%, ${adjustColor(branch.color, -20)} 100%)`;
+
+  // 一覧ページリンクにbranch引数付与
+  document.getElementById("listViewBtn").href = `list.html?branch=${branchKey}`;
+
+  // スタッフフィルター更新
+  updateStaffFilter();
+
+  // Firestoreリスナー再設定
+  initFirestore();
+
+  // localStorage に保存
+  localStorage.setItem("selectedBranch", branchKey);
+}
+
+function adjustColor(hex, amount) {
+  const num = parseInt(hex.replace("#", ""), 16);
+  const r = Math.min(255, Math.max(0, (num >> 16) + amount));
+  const g = Math.min(255, Math.max(0, ((num >> 8) & 0xff) + amount));
+  const b = Math.min(255, Math.max(0, (num & 0xff) + amount));
+  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+}
 
 // =============================================
 // 遅延判定
@@ -111,12 +165,10 @@ function createCard(project) {
       <div class="card-actions">
         ${!isCompleted
           ? `<button class="btn btn-next" onclick="advanceTask('${project.id}', ${project.currentTask})">完了 → 次へ</button>`
-          : `<button class="btn btn-done" disabled>全工程完了</button>`
-        }
+          : `<button class="btn btn-done" disabled>全工程完了</button>`}
         ${project.currentTask > 0 && !isCompleted
           ? `<button class="btn btn-revert" onclick="revertTask('${project.id}', ${project.currentTask})">← 戻る</button>`
-          : ``
-        }
+          : ""}
         <button class="btn btn-detail" onclick="openDetailModal('${project.id}')">詳細</button>
         <button class="btn btn-edit" onclick="openEditModal('${project.id}')">編集</button>
         <button class="btn btn-delete" onclick="openDeleteModal('${project.id}')">削除</button>
@@ -162,7 +214,11 @@ function renderProjects() {
 // Firestore リアルタイム同期
 // =============================================
 function initFirestore() {
-  db.collection("projects")
+  if (unsubscribe) unsubscribe();
+
+  const collection = BRANCHES[currentBranch].collection;
+
+  unsubscribe = db.collection(collection)
     .orderBy("goLiveDate", "asc")
     .onSnapshot(
       (snapshot) => {
@@ -172,7 +228,7 @@ function initFirestore() {
       },
       (error) => {
         console.error("Firestore error:", error);
-        showToast("データ取得に失敗しました。Firebase設定を確認してください。", "error");
+        showToast("データ取得に失敗しました", "error");
       }
     );
 }
@@ -181,9 +237,9 @@ function initFirestore() {
 // 統計
 // =============================================
 function updateStats() {
-  document.getElementById("statTotal").textContent = allProjects.length;
-  document.getElementById("statDelay").textContent   = allProjects.filter(p => checkDelay(p) === "delay").length;
-  document.getElementById("statWarning").textContent = allProjects.filter(p => checkDelay(p) === "warning").length;
+  document.getElementById("statTotal").textContent     = allProjects.length;
+  document.getElementById("statDelay").textContent     = allProjects.filter(p => checkDelay(p) === "delay").length;
+  document.getElementById("statWarning").textContent   = allProjects.filter(p => checkDelay(p) === "warning").length;
   document.getElementById("statCompleted").textContent = allProjects.filter(p => checkDelay(p) === "completed").length;
 }
 
@@ -196,72 +252,60 @@ async function advanceTask(id, currentTask) {
   const label = nextTask >= TASKS.length ? "全工程完了" : TASKS[nextTask];
   if (!confirm(`現在のタスクを完了にして次へ進みます。\n次：${label}\n\nよろしいですか？`)) return;
   try {
-    await db.collection("projects").doc(id).update({ currentTask: nextTask });
+    await db.collection(BRANCHES[currentBranch].collection).doc(id).update({ currentTask: nextTask });
     showToast("進捗を更新しました");
   } catch (e) {
-    console.error(e);
     showToast("更新に失敗しました", "error");
   }
 }
 
-// =============================================
-// タスクを戻す
-// =============================================
 async function revertTask(id, currentTask) {
   if (currentTask <= 0) return;
   const prevTask = currentTask - 1;
   if (!confirm(`ひとつ前のタスクに戻します。\n戻り先：${TASKS[prevTask]}\n\nよろしいですか？`)) return;
   try {
-    await db.collection("projects").doc(id).update({ currentTask: prevTask });
+    await db.collection(BRANCHES[currentBranch].collection).doc(id).update({ currentTask: prevTask });
     showToast("タスクを戻しました");
   } catch (e) {
-    console.error(e);
     showToast("更新に失敗しました", "error");
   }
 }
 
 // =============================================
-// 詳細ポップアップ
+// 詳細モーダル
 // =============================================
 function openDetailModal(id) {
   const p = allProjects.find((x) => x.id === id);
   if (!p) return;
-
   document.getElementById("detailTitle").textContent = p.hospitalName || "施設詳細";
-
   const rows = [
-    { label: "稼働日（予定含む）",              value: p.goLiveDate || "" },
-    { label: "施設名",                           value: p.hospitalName || "" },
-    { label: "メイン担当",                       value: p.mainPerson || "" },
-    { label: "経営主体",                         value: p.keieiShukai || "" },
-    { label: "許可病床数",                       value: p.kyokaBedNum || "" },
-    { label: "病棟構成",                         value: p.byokoKosei || "" },
-    { label: "導入病棟",                         value: p.donyuByoko || "" },
-    { label: "導入病床数",                       value: p.donyuBedNum || "" },
-    { label: "ベッドサイド端末（既存/新規台数）", value: p.bedsideTerminal || "" },
-    { label: "眠りSCAN（既存/新規台数）",        value: p.nemiriScan || "" },
-    { label: "離床CATCH（既存/新規台数）",       value: p.rishoCatch || "" },
-    { label: "Wi-Fiベッドナビ（既存/新規台数）", value: p.wifiNav || "" },
-    { label: "タブレット設置位置",               value: p.tabletPos || "" },
-    { label: "電子カルテ（ベンダー/機種）",      value: p.electronicKarte || "" },
-    { label: "ナースコール（メーカー/機種）",    value: p.nurseCall || "" },
-    { label: "周辺連携機能",                     value: p.shuhenRenkei || "" },
-    { label: "スケジュール状況",                 value: p.scheduleStatus || "" },
-    { label: "備考",                             value: p.memo || "" },
+    ["稼働日（予定含む）", p.goLiveDate],
+    ["施設名", p.hospitalName],
+    ["メイン担当", p.mainPerson],
+    ["経営主体", p.keieiShukai],
+    ["許可病床数", p.kyokaBedNum],
+    ["病棟構成", p.byokoKosei],
+    ["導入病棟", p.donyuByoko],
+    ["導入病床数", p.donyuBedNum],
+    ["ベッドサイド端末（既存/新規台数）", p.bedsideTerminal],
+    ["眠りSCAN（既存/新規台数）", p.nemiriScan],
+    ["離床CATCH（既存/新規台数）", p.rishoCatch],
+    ["Wi-Fiベッドナビ（既存/新規台数）", p.wifiNav],
+    ["タブレット設置位置", p.tabletPos],
+    ["電子カルテ（ベンダー/機種）", p.electronicKarte],
+    ["ナースコール（メーカー/機種）", p.nurseCall],
+    ["周辺連携機能", p.shuhenRenkei],
+    ["スケジュール状況", p.scheduleStatus],
+    ["備考", p.memo],
   ];
-
   document.getElementById("detailBody").innerHTML = `
-    <table class="detail-table">
-      <tbody>
-        ${rows.map(r => `
-          <tr>
-            <th>${escapeHtml(r.label)}</th>
-            <td>${r.value ? escapeHtml(r.value) : '<span style="color:#9aa5b4">未入力</span>'}</td>
-          </tr>
-        `).join("")}
-      </tbody>
-    </table>
-  `;
+    <table class="detail-table"><tbody>
+      ${rows.map(([l, v]) => `
+        <tr>
+          <th>${escapeHtml(l)}</th>
+          <td>${v ? escapeHtml(v) : '<span style="color:#9aa5b4">未入力</span>'}</td>
+        </tr>`).join("")}
+    </tbody></table>`;
   document.getElementById("detailModal").classList.add("open");
 }
 
@@ -273,7 +317,7 @@ function closeDetailModal() {
 // 案件追加・編集モーダル
 // =============================================
 function openAddModal() {
-  document.getElementById("modalTitle").textContent = "新規案件登録";
+  document.getElementById("modalTitle").textContent = `新規案件登録（${BRANCHES[currentBranch].label}）`;
   document.getElementById("projectForm").reset();
   document.getElementById("editProjectId").value = "";
   populateStaffSelects();
@@ -281,37 +325,31 @@ function openAddModal() {
 }
 
 function openEditModal(id) {
-  const project = allProjects.find((p) => p.id === id);
-  if (!project) return;
-
+  const p = allProjects.find((x) => x.id === id);
+  if (!p) return;
   document.getElementById("modalTitle").textContent = "案件編集";
-  document.getElementById("editProjectId").value = id;
-  document.getElementById("formHospitalName").value  = project.hospitalName || "";
-  document.getElementById("formGoLiveDate").value    = project.goLiveDate || "";
-  document.getElementById("formCurrentTask").value   = project.currentTask ?? 0;
-  document.getElementById("formMemo").value          = project.memo || "";
-  // 施設情報
-  document.getElementById("formKeieiShukai").value   = project.keieiShukai || "";
-  document.getElementById("formKyokaBedNum").value   = project.kyokaBedNum || "";
-  document.getElementById("formByokoKosei").value    = project.byokoKosei || "";
-  document.getElementById("formDonyuByoko").value    = project.donyuByoko || "";
-  document.getElementById("formDonyuBedNum").value   = project.donyuBedNum || "";
-  // 機器情報
-  document.getElementById("formBedsideTerminal").value = project.bedsideTerminal || "";
-  document.getElementById("formNemiriScan").value    = project.nemiriScan || "";
-  document.getElementById("formRishoCatch").value    = project.rishoCatch || "";
-  document.getElementById("formWifiNav").value       = project.wifiNav || "";
-  document.getElementById("formTabletPos").value     = project.tabletPos || "";
-  // システム連携
-  document.getElementById("formElectronicKarte").value = project.electronicKarte || "";
-  document.getElementById("formNurseCall").value     = project.nurseCall || "";
-  document.getElementById("formShuhenRenkei").value  = project.shuhenRenkei || "";
-  // スケジュール
-  document.getElementById("formScheduleStatus").value = project.scheduleStatus || "";
-
+  document.getElementById("editProjectId").value     = id;
+  document.getElementById("formHospitalName").value  = p.hospitalName || "";
+  document.getElementById("formGoLiveDate").value    = p.goLiveDate || "";
+  document.getElementById("formCurrentTask").value   = p.currentTask ?? 0;
+  document.getElementById("formMemo").value          = p.memo || "";
+  document.getElementById("formKeieiShukai").value   = p.keieiShukai || "";
+  document.getElementById("formKyokaBedNum").value   = p.kyokaBedNum || "";
+  document.getElementById("formByokoKosei").value    = p.byokoKosei || "";
+  document.getElementById("formDonyuByoko").value    = p.donyuByoko || "";
+  document.getElementById("formDonyuBedNum").value   = p.donyuBedNum || "";
+  document.getElementById("formBedsideTerminal").value = p.bedsideTerminal || "";
+  document.getElementById("formNemiriScan").value    = p.nemiriScan || "";
+  document.getElementById("formRishoCatch").value    = p.rishoCatch || "";
+  document.getElementById("formWifiNav").value       = p.wifiNav || "";
+  document.getElementById("formTabletPos").value     = p.tabletPos || "";
+  document.getElementById("formElectronicKarte").value = p.electronicKarte || "";
+  document.getElementById("formNurseCall").value     = p.nurseCall || "";
+  document.getElementById("formShuhenRenkei").value  = p.shuhenRenkei || "";
+  document.getElementById("formScheduleStatus").value = p.scheduleStatus || "";
   populateStaffSelects();
-  document.getElementById("formMainPerson").value = project.mainPerson || "";
-  document.getElementById("formSubPerson").value  = project.subPerson || "";
+  document.getElementById("formMainPerson").value = p.mainPerson || "";
+  document.getElementById("formSubPerson").value  = p.subPerson || "";
   document.getElementById("projectModal").classList.add("open");
 }
 
@@ -320,10 +358,11 @@ function closeModal() {
 }
 
 function populateStaffSelects() {
+  const staff = BRANCHES[currentBranch].staff;
   ["formMainPerson", "formSubPerson"].forEach((id) => {
-    const sel = document.getElementById(id);
-    sel.innerHTML = `<option value="">-- 選択してください --</option>` +
-      STAFF.map((s) => `<option value="${s}">${s}</option>`).join("");
+    document.getElementById(id).innerHTML =
+      `<option value="">-- 選択してください --</option>` +
+      staff.map((s) => `<option value="${s}">${s}</option>`).join("");
   });
 }
 
@@ -331,44 +370,36 @@ async function saveProject(e) {
   e.preventDefault();
   const id = document.getElementById("editProjectId").value;
   const data = {
-    hospitalName:  document.getElementById("formHospitalName").value.trim(),
-    goLiveDate:    document.getElementById("formGoLiveDate").value,
-    mainPerson:    document.getElementById("formMainPerson").value,
-    subPerson:     document.getElementById("formSubPerson").value,
-    memo:          document.getElementById("formMemo").value.trim(),
-    currentTask:   parseInt(document.getElementById("formCurrentTask").value) || 0,
-    // 施設情報
-    keieiShukai:   document.getElementById("formKeieiShukai").value.trim(),
-    kyokaBedNum:   document.getElementById("formKyokaBedNum").value.trim(),
-    byokoKosei:    document.getElementById("formByokoKosei").value.trim(),
-    donyuByoko:    document.getElementById("formDonyuByoko").value.trim(),
-    donyuBedNum:   document.getElementById("formDonyuBedNum").value.trim(),
-    // 機器情報
+    hospitalName:    document.getElementById("formHospitalName").value.trim(),
+    goLiveDate:      document.getElementById("formGoLiveDate").value,
+    mainPerson:      document.getElementById("formMainPerson").value,
+    subPerson:       document.getElementById("formSubPerson").value,
+    memo:            document.getElementById("formMemo").value.trim(),
+    currentTask:     parseInt(document.getElementById("formCurrentTask").value) || 0,
+    keieiShukai:     document.getElementById("formKeieiShukai").value.trim(),
+    kyokaBedNum:     document.getElementById("formKyokaBedNum").value.trim(),
+    byokoKosei:      document.getElementById("formByokoKosei").value.trim(),
+    donyuByoko:      document.getElementById("formDonyuByoko").value.trim(),
+    donyuBedNum:     document.getElementById("formDonyuBedNum").value.trim(),
     bedsideTerminal: document.getElementById("formBedsideTerminal").value.trim(),
-    nemiriScan:    document.getElementById("formNemiriScan").value.trim(),
-    rishoCatch:    document.getElementById("formRishoCatch").value.trim(),
-    wifiNav:       document.getElementById("formWifiNav").value.trim(),
-    tabletPos:     document.getElementById("formTabletPos").value.trim(),
-    // システム連携
+    nemiriScan:      document.getElementById("formNemiriScan").value.trim(),
+    rishoCatch:      document.getElementById("formRishoCatch").value.trim(),
+    wifiNav:         document.getElementById("formWifiNav").value.trim(),
+    tabletPos:       document.getElementById("formTabletPos").value.trim(),
     electronicKarte: document.getElementById("formElectronicKarte").value.trim(),
-    nurseCall:     document.getElementById("formNurseCall").value.trim(),
-    shuhenRenkei:  document.getElementById("formShuhenRenkei").value.trim(),
-    // スケジュール
-    scheduleStatus: document.getElementById("formScheduleStatus").value.trim(),
+    nurseCall:       document.getElementById("formNurseCall").value.trim(),
+    shuhenRenkei:    document.getElementById("formShuhenRenkei").value.trim(),
+    scheduleStatus:  document.getElementById("formScheduleStatus").value.trim(),
   };
-
-  if (!data.hospitalName) {
-    showToast("病院名を入力してください", "error");
-    return;
-  }
-
+  if (!data.hospitalName) { showToast("病院名を入力してください", "error"); return; }
   try {
+    const col = BRANCHES[currentBranch].collection;
     if (id) {
-      await db.collection("projects").doc(id).update(data);
+      await db.collection(col).doc(id).update(data);
       showToast("案件を更新しました");
     } else {
       data.createdAt = new Date().toISOString();
-      await db.collection("projects").add(data);
+      await db.collection(col).add(data);
       showToast("案件を登録しました");
     }
     closeModal();
@@ -397,18 +428,16 @@ function closeDeleteModal() {
 }
 
 async function confirmDelete() {
-  const pw = document.getElementById("deletePassword").value;
-  if (pw !== "0000") {
+  if (document.getElementById("deletePassword").value !== DELETE_PASSWORD) {
     document.getElementById("deleteError").textContent = "パスワードが違います";
     return;
   }
   if (!pendingDeleteId) return;
   try {
-    await db.collection("projects").doc(pendingDeleteId).delete();
+    await db.collection(BRANCHES[currentBranch].collection).doc(pendingDeleteId).delete();
     showToast("案件を削除しました");
     closeDeleteModal();
   } catch (err) {
-    console.error(err);
     showToast("削除に失敗しました", "error");
   }
 }
@@ -416,28 +445,28 @@ async function confirmDelete() {
 // =============================================
 // 検索・フィルタ
 // =============================================
+function updateStaffFilter() {
+  const sel = document.getElementById("staffFilter");
+  const staff = BRANCHES[currentBranch].staff;
+  sel.innerHTML = `<option value="">全員表示</option>` +
+    staff.map((s) => `<option value="${s}">${s}</option>`).join("");
+  filterPerson = "";
+}
+
 function initSearch() {
   document.getElementById("searchInput").addEventListener("input", (e) => {
     searchQuery = e.target.value;
     renderProjects();
   });
-  const sel = document.getElementById("staffFilter");
-  sel.innerHTML = `<option value="">全員表示</option>` +
-    STAFF.map((s) => `<option value="${s}">${s}</option>`).join("");
-  sel.addEventListener("change", (e) => {
+  document.getElementById("staffFilter").addEventListener("change", (e) => {
     filterPerson = e.target.value;
     renderProjects();
   });
-}
-
-// =============================================
-// トースト通知
-// =============================================
-function showToast(msg, type = "success") {
-  const toast = document.getElementById("toast");
-  toast.textContent = msg;
-  toast.className = `toast toast-${type} show`;
-  setTimeout(() => toast.classList.remove("show"), 3000);
+  document.getElementById("branchSelect").addEventListener("change", (e) => {
+    document.getElementById("searchInput").value = "";
+    searchQuery = "";
+    switchBranch(e.target.value);
+  });
 }
 
 // =============================================
@@ -448,30 +477,36 @@ function escapeHtml(str) {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
+function showToast(msg, type = "success") {
+  const toast = document.getElementById("toast");
+  toast.textContent = msg;
+  toast.className = `toast toast-${type} show`;
+  setTimeout(() => toast.classList.remove("show"), 3000);
+}
+
 // =============================================
 // 初期化
 // =============================================
 document.addEventListener("DOMContentLoaded", () => {
-  initSearch();
-  initFirestore();
-
-  document.getElementById("projectForm").addEventListener("submit", saveProject);
-
-  document.getElementById("projectModal").addEventListener("click", (e) => {
-    if (e.target.id === "projectModal") closeModal();
-  });
-  document.getElementById("deleteModal").addEventListener("click", (e) => {
-    if (e.target.id === "deleteModal") closeDeleteModal();
-  });
-  document.getElementById("detailModal").addEventListener("click", (e) => {
-    if (e.target.id === "detailModal") closeDetailModal();
-  });
-  document.getElementById("deletePassword").addEventListener("keydown", (e) => {
-    if (e.key === "Enter") confirmDelete();
-  });
-
+  // タスクセレクト初期化
   const taskSel = document.getElementById("formCurrentTask");
   taskSel.innerHTML =
     TASKS.map((t, i) => `<option value="${i}">${t}</option>`).join("") +
     `<option value="${TASKS.length}">完了（全工程終了）</option>`;
+
+  // 前回選択した支店を復元
+  const saved = localStorage.getItem("selectedBranch");
+  if (saved && BRANCHES[saved]) {
+    currentBranch = saved;
+    document.getElementById("branchSelect").value = saved;
+  }
+
+  initSearch();
+  switchBranch(currentBranch);
+
+  document.getElementById("projectForm").addEventListener("submit", saveProject);
+  document.getElementById("projectModal").addEventListener("click", (e) => { if (e.target.id === "projectModal") closeModal(); });
+  document.getElementById("deleteModal").addEventListener("click", (e) => { if (e.target.id === "deleteModal") closeDeleteModal(); });
+  document.getElementById("detailModal").addEventListener("click", (e) => { if (e.target.id === "detailModal") closeDetailModal(); });
+  document.getElementById("deletePassword").addEventListener("keydown", (e) => { if (e.key === "Enter") confirmDelete(); });
 });
