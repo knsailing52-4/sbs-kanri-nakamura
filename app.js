@@ -288,6 +288,7 @@ function openDetailModal(id) {
     ["導入病棟", p.donyuByoko],
     ["導入病床数", p.donyuBedNum],
     ["ベッドサイド端末（既存/新規台数）", p.bedsideTerminal],
+    ["ステーション端末（既存/新規台数）", p.stationTerminal],
     ["眠りSCAN（既存/新規台数）", p.nemiriScan],
     ["離床CATCH（既存/新規台数）", p.rishoCatch],
     ["Wi-Fiベッドナビ（既存/新規台数）", p.wifiNav],
@@ -339,6 +340,7 @@ function openEditModal(id) {
   document.getElementById("formDonyuByoko").value    = p.donyuByoko || "";
   document.getElementById("formDonyuBedNum").value   = p.donyuBedNum || "";
   document.getElementById("formBedsideTerminal").value = p.bedsideTerminal || "";
+  document.getElementById("formStationTerminal").value  = p.stationTerminal || "";
   document.getElementById("formNemiriScan").value    = p.nemiriScan || "";
   document.getElementById("formRishoCatch").value    = p.rishoCatch || "";
   document.getElementById("formWifiNav").value       = p.wifiNav || "";
@@ -382,6 +384,7 @@ async function saveProject(e) {
     donyuByoko:      document.getElementById("formDonyuByoko").value.trim(),
     donyuBedNum:     document.getElementById("formDonyuBedNum").value.trim(),
     bedsideTerminal: document.getElementById("formBedsideTerminal").value.trim(),
+    stationTerminal: document.getElementById("formStationTerminal").value.trim(),
     nemiriScan:      document.getElementById("formNemiriScan").value.trim(),
     rishoCatch:      document.getElementById("formRishoCatch").value.trim(),
     wifiNav:         document.getElementById("formWifiNav").value.trim(),
