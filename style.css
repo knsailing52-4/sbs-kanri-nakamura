@@ -723,60 +723,72 @@ body {
    ============================================= */
 /* ===== スマホ（〜600px） ===== */
 @media (max-width: 600px) {
-  /* ヘッダー：2段レイアウト */
+  /* ヘッダー 1段目：ロゴ＋支店選択、2段目：ボタン群 */
   .app-header { padding: 0; }
   .header-inner {
-    flex-direction: column;
-    height: auto;
-    padding: 10px 14px 8px;
-    gap: 8px;
-    align-items: stretch;
+    flex-direction: column !important;
+    height: auto !important;
+    padding: 10px 12px 8px !important;
+    gap: 8px !important;
+    align-items: stretch !important;
   }
   .header-title {
-    justify-content: space-between;
-    width: 100%;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    gap: 8px !important;
   }
-  .header-title .logo { font-size: 16px; }
-  .branch-switcher { flex-shrink: 0; }
-  .branch-select { font-size: 13px; max-width: 130px; }
+  .header-title .logo { font-size: 15px !important; white-space: nowrap; }
+  .branch-switcher { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+  .branch-label { font-size: 12px; white-space: nowrap; }
+  .branch-select { font-size: 12px !important; max-width: 120px !important; padding: 4px 6px !important; }
   .header-actions {
-    width: 100%;
-    justify-content: flex-end;
-    gap: 6px;
+    display: flex !important;
+    flex-direction: row !important;
+    width: 100% !important;
+    gap: 6px !important;
+    justify-content: stretch !important;
   }
-  .btn-list-view { font-size: 12px; padding: 7px 10px; }
-  .btn-import    { font-size: 12px; padding: 7px 10px; }
-  .btn-add-main  { font-size: 12px; padding: 7px 10px; }
+  .btn-list-view, .btn-import, .btn-add-main {
+    flex: 1 !important;
+    font-size: 11px !important;
+    padding: 7px 4px !important;
+    text-align: center !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+  }
 
-  /* 工程バー非表示（スペース節約） */
+  /* 工程バー非表示 */
   .task-list-bar { display: none; }
 
   /* 統計バー */
-  .stats-inner { gap: 10px; padding: 8px 14px; flex-wrap: wrap; }
+  .stats-inner { gap: 10px; padding: 8px 12px; flex-wrap: wrap; }
   .stat-num { font-size: 15px; }
   .stat-label { font-size: 10px; }
 
   /* 検索バー */
-  .search-inner { flex-direction: column; align-items: stretch; gap: 8px; padding: 10px 14px; }
+  .search-inner { flex-direction: column; align-items: stretch; gap: 8px; padding: 10px 12px; }
   .filter-select { min-width: unset; width: 100%; }
   .search-input  { width: 100%; }
   .count-label   { font-size: 12px; text-align: right; }
 
   /* カードグリッド */
-  .main-content { padding: 10px 12px; }
+  .main-content { padding: 10px 10px; }
   .project-grid { grid-template-columns: 1fr; gap: 10px; }
 
   /* カードアクション */
   .card-actions { flex-wrap: wrap; gap: 6px; }
   .btn-next, .btn-done { flex: 1 1 100%; }
-  .btn-revert  { flex: 1; }
-  .btn-detail  { flex: 1; }
-  .btn-edit    { flex: 1; }
-  .btn-delete  { flex: 1; }
+  .btn-revert { flex: 1; }
+  .btn-detail { flex: 1; }
+  .btn-edit   { flex: 1; }
+  .btn-delete { flex: 1; }
 
   /* モーダル */
-  .modal-box   { max-height: 95vh; margin: 10px; width: calc(100% - 20px); }
-  .modal-body  { padding: 12px; }
+  .modal-box    { max-height: 95vh; margin: 8px; width: calc(100% - 16px); }
+  .modal-body   { padding: 12px; }
   .modal-footer { padding: 10px 12px; gap: 8px; }
 }
 
