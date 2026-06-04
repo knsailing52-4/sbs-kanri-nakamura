@@ -1,317 +1,309 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>案件管理ツール</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
-  <!-- ヘッダー -->
-  <header class="app-header">
-    <div class="header-inner">
-      <div class="header-title">
-        <span class="logo">📋 案件管理</span>
-        <div class="branch-switcher">
-          <label class="branch-label">支店：</label>
-          <select id="branchSelect" class="branch-select">
-            <option value="nagoya">名古屋支店</option>
-            <option value="sapporo">札幌支店</option>
-            <option value="sendai">仙台支店</option>
-          </select>
-        </div>
-      </div>
-      <div style="display:flex; gap:8px; align-items:center;">
-        <a href="list.html" class="btn-list-view" id="listViewBtn">📊 一覧表示</a>
-        <button class="btn-import" onclick="openImportModal()">📥 Excel取込</button>
-        <button class="btn-add-main" onclick="openAddModal()">＋ 新規案件登録</button>
+<header class="app-header">
+  <div class="header-inner">
+    <div class="header-title">
+      <span class="logo">📋 案件管理</span>
+      <div class="branch-switcher">
+        <label class="branch-label">支店：</label>
+        <select id="branchSelect" class="branch-select">
+          <option value="nagoya">名古屋支店</option>
+          <option value="sapporo">札幌支店</option>
+          <option value="sendai">仙台支店</option>
+          <option value="tokyo">東京支店</option>
+          <option value="yokohama">横浜支店</option>
+          <option value="saitama">さいたま支店</option>
+          <option value="osaka">大阪支店</option>
+          <option value="hiroshima">広島支店</option>
+          <option value="fukuoka">福岡支店</option>
+        </select>
       </div>
     </div>
-  </header>
-
-  <!-- 工程一覧バー -->
-  <div class="task-list-bar">
-    <div class="task-list-inner">
-      <span class="task-list-title">工程</span>
-      <span class="task-item">01 商談中</span><span class="task-sep">→</span>
-      <span class="task-item">02 概算見積提出</span><span class="task-sep">→</span>
-      <span class="task-item">03 導入環境確認</span><span class="task-sep">→</span>
-      <span class="task-item">04 仕入れ見積取得</span><span class="task-sep">→</span>
-      <span class="task-item">05 最終見積提出</span><span class="task-sep">→</span>
-      <span class="task-item">06 CS打合せ</span><span class="task-sep">→</span>
-      <span class="task-item">07 受注</span><span class="task-sep">→</span>
-      <span class="task-item">08 社内キックオフ</span><span class="task-sep">→</span>
-      <span class="task-item">09 システム構築準備</span><span class="task-sep">→</span>
-      <span class="task-item">10 稼働</span><span class="task-sep">→</span>
-      <span class="task-item">11 稼働後フォロー</span>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <a href="list.html" class="btn-list-view" id="listViewBtn">📊 一覧表示</a>
+      <button class="btn-import" onclick="openImportModal()">📥 JSON取込</button>
+      <button class="btn-add-main" onclick="openAddModal()">＋ 新規案件登録</button>
     </div>
   </div>
+</header>
 
-  <!-- 統計バー -->
-  <div class="stats-bar">
-    <div class="stats-inner">
-      <div class="stat-item total">
-        <span class="stat-num" id="statTotal">0</span>
-        <span class="stat-label">件（全体）</span>
-      </div>
-      <div class="stat-div"></div>
-      <div class="stat-item delay">
-        <span class="stat-num" id="statDelay">0</span>
-        <span class="stat-label">件 遅延</span>
-      </div>
-      <div class="stat-item warning">
-        <span class="stat-num" id="statWarning">0</span>
-        <span class="stat-label">件 注意</span>
-      </div>
-      <div class="stat-item done">
-        <span class="stat-num" id="statCompleted">0</span>
-        <span class="stat-label">件 完了</span>
-      </div>
-    </div>
+<div class="task-list-bar">
+  <div class="task-list-inner">
+    <span class="task-list-title">工程</span>
+    <span class="task-item">01 商談中</span><span class="task-sep">→</span>
+    <span class="task-item">02 概算見積提出</span><span class="task-sep">→</span>
+    <span class="task-item">03 導入環境確認</span><span class="task-sep">→</span>
+    <span class="task-item">04 仕入れ見積取得</span><span class="task-sep">→</span>
+    <span class="task-item">05 最終見積提出</span><span class="task-sep">→</span>
+    <span class="task-item">06 CS打合せ</span><span class="task-sep">→</span>
+    <span class="task-item">07 受注</span><span class="task-sep">→</span>
+    <span class="task-item">08 社内キックオフ</span><span class="task-sep">→</span>
+    <span class="task-item">09 システム構築準備</span><span class="task-sep">→</span>
+    <span class="task-item">10 稼働</span><span class="task-sep">→</span>
+    <span class="task-item">11 稼働後フォロー</span>
   </div>
+</div>
 
-  <!-- 検索・フィルタバー -->
-  <div class="search-bar">
-    <div class="search-inner">
-      <div class="search-wrap">
-        <span class="search-icon">🔍</span>
-        <input type="text" id="searchInput" class="search-input" placeholder="病院名で検索..." />
-      </div>
-      <select id="staffFilter" class="filter-select">
-        <option value="">全員表示</option>
-      </select>
-      <span class="count-label"><span id="projectCount">0 件</span>表示中</span>
-    </div>
+<div class="stats-bar">
+  <div class="stats-inner">
+    <div class="stat-item total"><span class="stat-num" id="statTotal">0</span><span class="stat-label">件（全体）</span></div>
+    <div class="stat-div"></div>
+    <div class="stat-item delay"><span class="stat-num" id="statDelay">0</span><span class="stat-label">件 遅延</span></div>
+    <div class="stat-item warning"><span class="stat-num" id="statWarning">0</span><span class="stat-label">件 注意</span></div>
+    <div class="stat-item done"><span class="stat-num" id="statCompleted">0</span><span class="stat-label">件 完了</span></div>
   </div>
+</div>
 
-  <!-- メインコンテンツ -->
-  <main class="main-content">
-    <div class="project-grid" id="projectList"></div>
-    <div class="empty-state" id="emptyState">
-      <span class="empty-icon">📂</span>
-      <p>案件が見つかりません</p>
-      <p style="font-size:12px; color:#9aa5b4">「新規案件登録」から追加してください</p>
+<div class="search-bar">
+  <div class="search-inner">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" class="search-input" placeholder="病院名で検索..."/>
     </div>
-  </main>
-
-  <!-- 案件追加・編集モーダル -->
-  <div id="projectModal" class="modal-overlay">
-    <div class="modal-box">
-      <div class="modal-header">
-        <h2 id="modalTitle">新規案件登録</h2>
-        <button class="btn-modal-close" onclick="closeModal()">✕</button>
-      </div>
-      <form id="projectForm">
-        <div class="modal-body">
-          <input type="hidden" id="editProjectId" />
-
-          <div class="form-section-title">基本情報</div>
-          <div class="form-group">
-            <label class="form-label" for="formHospitalName">病院名<span class="required">*</span></label>
-            <input type="text" id="formHospitalName" class="form-input" placeholder="例：○○総合病院" required />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="formGoLiveDate">稼働予定日</label>
-            <input type="date" id="formGoLiveDate" class="form-input" />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="formMainPerson">メイン担当</label>
-            <select id="formMainPerson" class="form-select">
-              <option value="">-- 選択してください --</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="formSubPerson">サブ担当</label>
-            <select id="formSubPerson" class="form-select">
-              <option value="">-- 選択してください --</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="formCurrentTask">現在のタスク</label>
-            <select id="formCurrentTask" class="form-select"></select>
-          </div>
-
-          <div class="form-section-title">施設情報</div>
-          <div class="form-group">
-            <label class="form-label" for="formKeieiShukai">経営主体</label>
-            <input type="text" id="formKeieiShukai" class="form-input" placeholder="例：市立" />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="formKyokaBedNum">許可病床数</label>
-            <input type="text" id="formKyokaBedNum" class="form-input" placeholder="例：800床" />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="formByokoKosei">病棟構成</label>
-            <input type="text" id="formByokoKosei" class="form-input" placeholder="例：急性期主体（ICU20床、HCU20床）" />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="formDonyuByoko">導入病棟</label>
-            <input type="text" id="formDonyuByoko" class="form-input" placeholder="例：ICU、HCU、3A病棟" />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="formDonyuBedNum">導入病床数</label>
-            <input type="text" id="formDonyuBedNum" class="form-input" placeholder="例：400床" />
-          </div>
-
-          <div class="form-section-title">機器情報</div>
-          <div class="form-group">
-            <label class="form-label" for="formBedsideTerminal">ベッドサイド端末（既存/新規台数）</label>
-            <input type="text" id="formBedsideTerminal" class="form-input" placeholder="例：既存0台／新規400台" />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="formStationTerminal">ステーション端末（既存/新規台数）</label>
-            <input type="text" id="formStationTerminal" class="form-input" placeholder="例：既存0台／新規20台" />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="formNemiriScan">眠りSCAN（既存/新規台数）</label>
-            <input type="text" id="formNemiriScan" class="form-input" placeholder="例：既存0台／新規400台" />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="formRishoCatch">離床CATCH（既存/新規台数）</label>
-            <input type="text" id="formRishoCatch" class="form-input" placeholder="例：既存30台／新規50台" />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="formWifiNav">Wi-Fiベッドナビ（既存/新規台数）</label>
-            <input type="text" id="formWifiNav" class="form-input" placeholder="例：既存30台／新規50台" />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="formTabletPos">タブレット設置位置</label>
-            <input type="text" id="formTabletPos" class="form-input" placeholder="例：床頭台前面" />
-          </div>
-
-          <div class="form-section-title">システム連携</div>
-          <div class="form-group">
-            <label class="form-label" for="formElectronicKarte">電子カルテ（ベンダー/機種）</label>
-            <input type="text" id="formElectronicKarte" class="form-input" placeholder="例：富士通／HOPE LifeMark-HX" />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="formNurseCall">ナースコール（メーカー/機種）</label>
-            <input type="text" id="formNurseCall" class="form-input" placeholder="例：ケアコム／PLAIMH-NICCS" />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="formShuhenRenkei">周辺連携機能</label>
-            <input type="text" id="formShuhenRenkei" class="form-input" placeholder="例：カメラ機能：あり、モバイル連携：なし" />
-          </div>
-
-          <div class="form-section-title">スケジュール</div>
-          <div class="form-group">
-            <label class="form-label" for="formScheduleStatus">スケジュール状況</label>
-            <input type="text" id="formScheduleStatus" class="form-input" placeholder="例：電カル更新：2025/7、現状：約1か月遅延" />
-          </div>
-
-          <div class="form-section-title">備考</div>
-          <div class="form-group">
-            <label class="form-label" for="formMemo">備考</label>
-            <textarea id="formMemo" class="form-textarea" placeholder="備考を入力してください"></textarea>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" onclick="closeModal()">キャンセル</button>
-          <button type="submit" class="btn btn-primary">保存</button>
-        </div>
-      </form>
-    </div>
+    <select id="staffFilter" class="filter-select"><option value="">全員表示</option></select>
+    <span class="count-label"><span id="projectCount">0 件</span>表示中</span>
   </div>
+</div>
 
-  <!-- 詳細モーダル -->
-  <div id="detailModal" class="modal-overlay">
-    <div class="modal-box detail-modal-box">
-      <div class="modal-header">
-        <h2 id="detailTitle">施設詳細</h2>
-        <button class="btn-modal-close" onclick="closeDetailModal()">✕</button>
-      </div>
-      <div class="modal-body" id="detailBody"></div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeDetailModal()">閉じる</button>
-      </div>
-    </div>
+<main class="main-content">
+  <div class="project-grid" id="projectList"></div>
+  <div class="empty-state" id="emptyState">
+    <span class="empty-icon">📂</span>
+    <p>案件が見つかりません</p>
+    <p style="font-size:12px;color:#9aa5b4">「新規案件登録」から追加してください</p>
   </div>
+</main>
 
-  <!-- 削除確認モーダル -->
-  <div id="deleteModal" class="modal-overlay">
-    <div class="modal-box delete-modal-box">
-      <div class="modal-header">
-        <h2>案件の削除</h2>
-        <button class="btn-modal-close" onclick="closeDeleteModal()">✕</button>
-      </div>
+<!-- 案件登録・編集モーダル -->
+<div id="projectModal" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 id="modalTitle">新規案件登録</h2>
+      <button class="btn-modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <form id="projectForm">
       <div class="modal-body">
-        <div class="delete-info">⚠️ この操作は取り消せません。<br />削除パスワードを入力してください。</div>
+        <input type="hidden" id="editProjectId"/>
+
+        <div class="form-section-title">基本情報</div>
         <div class="form-group">
-          <label class="form-label" for="deletePassword">パスワード</label>
-          <input type="password" id="deletePassword" class="form-input" placeholder="削除パスワードを入力" autocomplete="off" />
-        </div>
-        <div class="error-text" id="deleteError"></div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeDeleteModal()">キャンセル</button>
-        <button class="btn btn-delete" onclick="confirmDelete()">削除する</button>
-      </div>
-    </div>
-  </div>
-
-
-  <!-- Excel取込モーダル -->
-  <div id="importModal" class="modal-overlay">
-    <div class="modal-box" style="max-width:660px;">
-      <div class="modal-header">
-        <h2>📥 Excel一括取込</h2>
-        <button class="btn-modal-close" onclick="closeImportModal()">✕</button>
-      </div>
-      <div class="modal-body">
-        <div style="background:#e8f0fc;border:1px solid #c5d8f5;border-radius:8px;padding:14px;font-size:13px;color:#0f3d82;margin-bottom:16px;line-height:1.8;">
-          <strong>取込フィルター条件：</strong><br>
-          ✅ 売上予定期：<strong>79期 または 80期</strong><br>
-          ✅ SFA確度：<strong>商談 または 顧客注文</strong><br>
-          ✅ 支店：現在選択中の支店（札幌・仙台・名古屋）と一致する行のみ<br>
-          📌 稼働予定日は取込後に各案件から手動入力してください
+          <label class="form-label">病院名<span class="required">*</span></label>
+          <input type="text" id="formHospitalName" class="form-input" placeholder="例：○○総合病院" required/>
         </div>
         <div class="form-group">
-          <label class="form-label">Excelファイル（.xlsx / .xlsm）を選択</label>
-          <input type="file" id="importFileInput" accept=".xlsx,.xlsm" class="form-input" style="padding:8px;" onchange="previewImport(this)" />
+          <label class="form-label">稼働予定日</label>
+          <input type="date" id="formGoLiveDate" class="form-input"/>
         </div>
-        <div id="importPreview" style="display:none;margin-top:12px;">
-          <div style="font-size:13px;font-weight:600;color:#1e2330;margin-bottom:8px;">
-            取込予定データ：<span id="importCount" style="color:#1a5cb8;font-size:15px;">0</span> 件
-          </div>
-          <div style="max-height:260px;overflow-y:auto;border:1px solid #e2e6ed;border-radius:6px;">
-            <table style="width:100%;border-collapse:collapse;font-size:12px;">
-              <thead>
-                <tr style="background:#f8f9fb;">
-                  <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e6ed;white-space:nowrap;">病院名</th>
-                  <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e6ed;white-space:nowrap;">メイン担当</th>
-                  <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e6ed;white-space:nowrap;">許可病床数</th>
-                  <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e6ed;white-space:nowrap;">SFA確度</th>
-                  <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e6ed;white-space:nowrap;">売上予定期</th>
-                  <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e6ed;white-space:nowrap;">ナースコール</th>
-                  <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e6ed;white-space:nowrap;">電子カルテ</th>
-                </tr>
-              </thead>
-              <tbody id="importPreviewBody"></tbody>
-            </table>
-          </div>
+        <div class="form-group">
+          <label class="form-label">新規/既存</label>
+          <input type="text" id="formNewOrExisting" class="form-input" placeholder="例：新規"/>
         </div>
-        <div id="importNoData" style="display:none;text-align:center;padding:24px;color:#9aa5b4;font-size:13px;">
-          条件に一致するデータが見つかりませんでした
+        <div class="form-group">
+          <label class="form-label">スマベ</label>
+          <input type="text" id="formSmabe" class="form-input" placeholder="例：スマベ"/>
         </div>
-        <div id="importError" style="color:#c0392b;font-size:12px;margin-top:8px;"></div>
+        <div class="form-group">
+          <label class="form-label">メイン担当</label>
+          <input type="text" id="formMainPerson" class="form-input" placeholder="担当者名を入力（候補から選択も可）" autocomplete="off"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">サブ担当</label>
+          <input type="text" id="formSubPerson" class="form-input" placeholder="担当者名を入力（候補から選択も可）" autocomplete="off"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">現在のタスク</label>
+          <select id="formCurrentTask" class="form-select"></select>
+        </div>
+
+        <div class="form-section-title">施設情報</div>
+        <div class="form-group">
+          <label class="form-label">経営主体</label>
+          <input type="text" id="formKeieiShukai" class="form-input" placeholder="例：市立"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">許可病床数</label>
+          <input type="text" id="formKyokaBedNum" class="form-input" placeholder="例：800床"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">病棟構成</label>
+          <input type="text" id="formByokoKosei" class="form-input" placeholder="例：急性期主体（ICU20床、HCU20床）"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">導入病棟</label>
+          <input type="text" id="formDonyuByoko" class="form-input" placeholder="例：ICU、HCU、3A病棟"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">導入病床数</label>
+          <input type="text" id="formDonyuBedNum" class="form-input" placeholder="例：400床"/>
+        </div>
+
+        <div class="form-section-title">機器情報</div>
+        <div class="form-group">
+          <label class="form-label">ベッドサイド端末（既存/新規台数）</label>
+          <input type="text" id="formBedsideTerminal" class="form-input" placeholder="例：既存0台／新規400台"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">ステーション端末（既存/新規台数）</label>
+          <input type="text" id="formStationTerminal" class="form-input" placeholder="例：既存0台／新規20台"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">眠りSCAN（既存/新規台数）</label>
+          <input type="text" id="formNemiriScan" class="form-input" placeholder="例：既存0台／新規400台"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">離床CATCH（既存/新規台数）</label>
+          <input type="text" id="formRishoCatch" class="form-input" placeholder="例：既存30台／新規50台"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Wi-Fiベッドナビ（既存/新規台数）</label>
+          <input type="text" id="formWifiNav" class="form-input" placeholder="例：既存30台／新規50台"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">タブレット設置位置</label>
+          <input type="text" id="formTabletPos" class="form-input" placeholder="例：床頭台前面"/>
+        </div>
+
+        <div class="form-section-title">システム連携</div>
+        <div class="form-group">
+          <label class="form-label">電子カルテ（ベンダー/機種）</label>
+          <input type="text" id="formElectronicKarte" class="form-input" placeholder="例：富士通／HOPE LifeMark-HX"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">ナースコール（メーカー/機種）</label>
+          <input type="text" id="formNurseCall" class="form-input" placeholder="例：ケアコム／PLAIMH-NICCS"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">周辺連携機能</label>
+          <input type="text" id="formShuhenRenkei" class="form-input" placeholder="例：カメラ機能：あり"/>
+        </div>
+
+        <div class="form-section-title">案件情報</div>
+        <div class="form-group">
+          <label class="form-label">案件概要</label>
+          <input type="text" id="formAnkenGaiyou" class="form-input" placeholder="例：購入"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">スケジュール状況</label>
+          <input type="text" id="formScheduleStatus" class="form-input" placeholder="例：電カル更新：2025/7"/>
+        </div>
+
+        <div class="form-section-title">備考</div>
+        <div class="form-group">
+          <label class="form-label">備考</label>
+          <textarea id="formMemo" class="form-textarea" placeholder="備考を入力してください"></textarea>
+        </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeImportModal()">キャンセル</button>
-        <button class="btn btn-primary" id="importExecuteBtn" onclick="executeImport()" disabled>取込実行</button>
+        <button type="button" class="btn btn-secondary" onclick="closeModal()">キャンセル</button>
+        <button type="submit" class="btn btn-primary">保存</button>
       </div>
+    </form>
+  </div>
+</div>
+
+<!-- 詳細モーダル -->
+<div id="detailModal" class="modal-overlay">
+  <div class="modal-box detail-modal-box">
+    <div class="modal-header">
+      <h2 id="detailTitle">施設詳細</h2>
+      <button class="btn-modal-close" onclick="closeDetailModal()">✕</button>
+    </div>
+    <div class="modal-body" id="detailBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeDetailModal()">閉じる</button>
     </div>
   </div>
+</div>
 
-  <!-- トースト通知 -->
-  <div id="toast" class="toast"></div>
+<!-- 削除モーダル -->
+<div id="deleteModal" class="modal-overlay">
+  <div class="modal-box delete-modal-box">
+    <div class="modal-header">
+      <h2>案件の削除</h2>
+      <button class="btn-modal-close" onclick="closeDeleteModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="delete-info">⚠️ この操作は取り消せません。<br/>削除パスワードを入力してください。</div>
+      <div class="form-group">
+        <label class="form-label">パスワード</label>
+        <input type="password" id="deletePassword" class="form-input" placeholder="削除パスワードを入力" autocomplete="off"/>
+      </div>
+      <div class="error-text" id="deleteError"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeDeleteModal()">キャンセル</button>
+      <button class="btn btn-delete" onclick="confirmDelete()">削除する</button>
+    </div>
+  </div>
+</div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-  <script src="firebase-config.js"></script>
-  <script src="app.js"></script>
+<!-- JSON取込モーダル -->
+<div id="importModal" class="modal-overlay">
+  <div class="modal-box" style="max-width:680px;">
+    <div class="modal-header">
+      <h2>📥 JSON一括取込</h2>
+      <button class="btn-modal-close" onclick="closeImportModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="background:#e8f0fc;border:1px solid #c5d8f5;border-radius:8px;padding:14px;font-size:13px;color:#0f3d82;margin-bottom:16px;line-height:1.8;">
+        <strong>取込について：</strong><br>
+        ・現在選択中の支店のコレクションに登録されます<br>
+        ・JSONは配列形式（[{...},{...}]）に対応<br>
+        ・担当者名はJSONの mainPerson / subPerson から自動反映<br>
+        ・stTerminal → ステーション端末として取込みます
+      </div>
+      <div class="form-group">
+        <label class="form-label">JSONファイルを選択（.json / .txt）</label>
+        <input type="file" id="importFileInput" accept=".json,.txt" class="form-input" style="padding:8px;" onchange="previewImport(this)"/>
+      </div>
+      <div id="importPreview" style="display:none;margin-top:12px;">
+        <div style="font-size:13px;font-weight:600;color:#1e2330;margin-bottom:8px;">
+          取込予定データ：<span id="importCount" style="color:#1a5cb8;font-size:15px;">0</span> 件
+        </div>
+        <div style="max-height:260px;overflow-y:auto;border:1px solid #e2e6ed;border-radius:6px;">
+          <table style="width:100%;border-collapse:collapse;font-size:12px;">
+            <thead>
+              <tr style="background:#f8f9fb;">
+                <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e6ed;white-space:nowrap;">病院名</th>
+                <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e6ed;white-space:nowrap;">メイン担当</th>
+                <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e6ed;white-space:nowrap;">サブ担当</th>
+                <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e6ed;white-space:nowrap;">稼働予定日</th>
+                <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e6ed;white-space:nowrap;">許可病床数</th>
+                <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e6ed;white-space:nowrap;">新規/既存</th>
+                <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #e2e6ed;white-space:nowrap;">スマベ</th>
+              </tr>
+            </thead>
+            <tbody id="importPreviewBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div id="importNoData" style="display:none;text-align:center;padding:24px;color:#9aa5b4;font-size:13px;">
+        取込可能なデータが見つかりませんでした
+      </div>
+      <div id="importError" style="color:#c0392b;font-size:12px;margin-top:8px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeImportModal()">キャンセル</button>
+      <button class="btn btn-primary" id="importExecuteBtn" onclick="executeImport()" disabled>取込実行</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="firebase-config.js"></script>
+<script src="app.js"></script>
 </body>
 </html>

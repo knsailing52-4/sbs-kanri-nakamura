@@ -1,7 +1,6 @@
 // =============================================
-// Firebase 設定ファイル - 統合版（名古屋・札幌・仙台）
+// Firebase 設定ファイル - 統合版
 // =============================================
-
 const firebaseConfig = {
   apiKey: "AIzaSyCg_kbwJVJr4KalZgJag9w4BivRE1BQArc",
   authDomain: "sbs-nagoya.firebaseapp.com",
@@ -11,6 +10,5 @@ const firebaseConfig = {
   appId: "1:900032955857:web:6ddabbd9f4c12992724cf0",
   measurementId: "G-GFG99PTCGK"
 };
-
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();

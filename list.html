@@ -1,93 +1,96 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>全ステータス一覧 | 案件管理ツール</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="list.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="list.css"/>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
-  <header class="app-header">
-    <div class="header-inner">
-      <div class="header-title">
-        <a href="index.html" class="btn-back" id="backBtn">← Top画面</a>
-        <span class="logo">📋 全ステータス一覧</span>
-        <div class="branch-switcher">
-          <label class="branch-label">支店：</label>
-          <select id="branchSelect" class="branch-select">
-            <option value="nagoya">名古屋支店</option>
-            <option value="sapporo">札幌支店</option>
-            <option value="sendai">仙台支店</option>
-          </select>
-        </div>
-      </div>
-    </div>
-  </header>
-
-  <div class="search-bar">
-    <div class="search-inner">
-      <div class="search-wrap">
-        <span class="search-icon">🔍</span>
-        <input type="text" id="searchInput" class="search-input" placeholder="病院名で検索..." />
-      </div>
-      <select id="staffFilter" class="filter-select">
-        <option value="">全員表示</option>
-      </select>
-      <select id="statusFilter" class="filter-select">
-        <option value="">全ステータス</option>
-        <option value="delay">🔴 遅延</option>
-        <option value="warning">🟡 注意</option>
-        <option value="normal">🔵 正常</option>
-        <option value="completed">✅ 完了</option>
-      </select>
-      <span class="count-label"><span id="projectCount">0 件</span>表示中</span>
-    </div>
-  </div>
-
-  <main class="list-content">
-    <div class="table-wrap">
-      <table class="status-table" id="statusTable">
-        <thead>
-          <tr>
-            <th class="col-status">状態</th>
-            <th class="col-hospital">病院名</th>
-            <th class="col-live">稼働予定日</th>
-            <th class="col-days">残日数</th>
-            <th class="col-task">現在の工程</th>
-            <th class="col-main">メイン担当</th>
-            <th class="col-sub">サブ担当</th>
-            <th class="col-memo">備考</th>
-          </tr>
-        </thead>
-        <tbody id="tableBody">
-          <tr><td colspan="8" class="loading-cell">読み込み中...</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </main>
-
-  <div id="detailModal" class="modal-overlay">
-    <div class="modal-box detail-modal-box">
-      <div class="modal-header">
-        <h2 id="detailTitle">施設詳細</h2>
-        <button class="btn-modal-close" onclick="closeDetailModal()">✕</button>
-      </div>
-      <div class="modal-body" id="detailBody"></div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeDetailModal()">閉じる</button>
+<header class="app-header">
+  <div class="header-inner">
+    <div class="header-title">
+      <a href="index.html" class="btn-back" id="backBtn">← Top画面</a>
+      <span class="logo">📋 全ステータス一覧</span>
+      <div class="branch-switcher">
+        <label class="branch-label">支店：</label>
+        <select id="branchSelect" class="branch-select">
+          <option value="nagoya">名古屋支店</option>
+          <option value="sapporo">札幌支店</option>
+          <option value="sendai">仙台支店</option>
+          <option value="tokyo">東京支店</option>
+          <option value="yokohama">横浜支店</option>
+          <option value="saitama">さいたま支店</option>
+          <option value="osaka">大阪支店</option>
+          <option value="hiroshima">広島支店</option>
+          <option value="fukuoka">福岡支店</option>
+        </select>
       </div>
     </div>
   </div>
+</header>
 
-  <div id="toast" class="toast"></div>
+<div class="search-bar">
+  <div class="search-inner">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" class="search-input" placeholder="病院名で検索..."/>
+    </div>
+    <select id="staffFilter" class="filter-select"><option value="">全員表示</option></select>
+    <select id="statusFilter" class="filter-select">
+      <option value="">全ステータス</option>
+      <option value="delay">🔴 遅延</option>
+      <option value="warning">🟡 注意</option>
+      <option value="normal">🔵 正常</option>
+      <option value="completed">✅ 完了</option>
+    </select>
+    <span class="count-label"><span id="projectCount">0 件</span>表示中</span>
+  </div>
+</div>
 
-  <script src="firebase-config.js"></script>
-  <script src="list.js"></script>
+<main class="list-content">
+  <div class="table-wrap">
+    <table class="status-table">
+      <thead>
+        <tr>
+          <th class="col-status">状態</th>
+          <th class="col-hospital">病院名</th>
+          <th class="col-live">稼働予定日</th>
+          <th class="col-days">残日数</th>
+          <th class="col-task">現在の工程</th>
+          <th class="col-main">メイン担当</th>
+          <th class="col-sub">サブ担当</th>
+          <th class="col-memo">備考</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <tr><td colspan="8" class="loading-cell">読み込み中...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<div id="detailModal" class="modal-overlay">
+  <div class="modal-box detail-modal-box">
+    <div class="modal-header">
+      <h2 id="detailTitle">施設詳細</h2>
+      <button class="btn-modal-close" onclick="closeDetailModal()">✕</button>
+    </div>
+    <div class="modal-body" id="detailBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeDetailModal()">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+<script src="firebase-config.js"></script>
+<script src="list.js"></script>
 </body>
 </html>
