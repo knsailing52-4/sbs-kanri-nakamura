@@ -59,7 +59,7 @@ body {
 .app-header {
   background: linear-gradient(135deg, var(--blue-dark) 0%, var(--blue) 100%);
   color: var(--white);
-  padding: 0 20px;
+  padding: 0 16px;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -73,18 +73,21 @@ body {
   align-items: center;
   justify-content: space-between;
   height: 56px;
+  gap: 10px;
 }
 
 .header-title {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-shrink: 0;
 }
 
 .header-title .logo {
   font-size: 18px;
   font-weight: 700;
   letter-spacing: .02em;
+  white-space: nowrap;
 }
 
 .header-title .branch-tag {
@@ -96,18 +99,26 @@ body {
   letter-spacing: .04em;
 }
 
+.header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
 .btn-add-main {
   background: var(--white);
   color: var(--blue);
   border: none;
   border-radius: var(--radius-sm);
-  padding: 8px 16px;
+  padding: 8px 14px;
   font-weight: 700;
   font-size: 13px;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
   transition: background .15s, transform .1s;
 }
 .btn-add-main:hover { background: var(--blue-light); transform: translateY(-1px); }
@@ -710,25 +721,78 @@ body {
 /* =============================================
    レスポンシブ
    ============================================= */
+/* ===== スマホ（〜600px） ===== */
 @media (max-width: 600px) {
-  .header-inner { height: 52px; }
-  .header-title .logo { font-size: 15px; }
-  .stats-inner { gap: 12px; }
+  /* ヘッダー：2段レイアウト */
+  .app-header { padding: 0; }
+  .header-inner {
+    flex-direction: column;
+    height: auto;
+    padding: 10px 14px 8px;
+    gap: 8px;
+    align-items: stretch;
+  }
+  .header-title {
+    justify-content: space-between;
+    width: 100%;
+  }
+  .header-title .logo { font-size: 16px; }
+  .branch-switcher { flex-shrink: 0; }
+  .branch-select { font-size: 13px; max-width: 130px; }
+  .header-actions {
+    width: 100%;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+  .btn-list-view { font-size: 12px; padding: 7px 10px; }
+  .btn-import    { font-size: 12px; padding: 7px 10px; }
+  .btn-add-main  { font-size: 12px; padding: 7px 10px; }
+
+  /* 工程バー非表示（スペース節約） */
+  .task-list-bar { display: none; }
+
+  /* 統計バー */
+  .stats-inner { gap: 10px; padding: 8px 14px; flex-wrap: wrap; }
   .stat-num { font-size: 15px; }
-  .search-inner { flex-direction: column; align-items: stretch; }
-  .filter-select { min-width: unset; }
-  .main-content { padding: 12px; }
-  .project-grid { grid-template-columns: 1fr; gap: 12px; }
-  .card-actions { flex-direction: column; }
-  .btn-next, .btn-done { width: 100%; }
-  .modal-box { max-height: 95vh; }
-  .modal-body { padding: 14px; }
+  .stat-label { font-size: 10px; }
+
+  /* 検索バー */
+  .search-inner { flex-direction: column; align-items: stretch; gap: 8px; padding: 10px 14px; }
+  .filter-select { min-width: unset; width: 100%; }
+  .search-input  { width: 100%; }
+  .count-label   { font-size: 12px; text-align: right; }
+
+  /* カードグリッド */
+  .main-content { padding: 10px 12px; }
+  .project-grid { grid-template-columns: 1fr; gap: 10px; }
+
+  /* カードアクション */
+  .card-actions { flex-wrap: wrap; gap: 6px; }
+  .btn-next, .btn-done { flex: 1 1 100%; }
+  .btn-revert  { flex: 1; }
+  .btn-detail  { flex: 1; }
+  .btn-edit    { flex: 1; }
+  .btn-delete  { flex: 1; }
+
+  /* モーダル */
+  .modal-box   { max-height: 95vh; margin: 10px; width: calc(100% - 20px); }
+  .modal-body  { padding: 12px; }
+  .modal-footer { padding: 10px 12px; gap: 8px; }
 }
 
+/* ===== タブレット（601〜900px） ===== */
+@media (min-width: 601px) and (max-width: 900px) {
+  .header-inner { height: auto; flex-wrap: wrap; padding: 8px 16px; gap: 8px; }
+  .header-title { flex: 1; }
+  .header-actions { flex-shrink: 0; }
+  .branch-select { max-width: 150px; }
+  .project-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ===== PC ===== */
 @media (min-width: 900px) {
   .project-grid { grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); }
 }
-
 @media (min-width: 1100px) {
   .project-grid { grid-template-columns: repeat(3, 1fr); }
 }
