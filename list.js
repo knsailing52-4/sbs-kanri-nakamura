@@ -102,7 +102,7 @@ function initFirestore() {
     .orderBy("goLiveDate","asc")
     .onSnapshot(snapshot=>{
       allProjects = snapshot.docs.map(doc=>({id:doc.id,...doc.data()}));
-      renderTable();
+      updateStaffFilter(); renderTable();
     }, err=>{
       console.error(err);
       document.getElementById("tableBody").innerHTML=`<tr><td colspan="8" class="loading-cell">データ取得に失敗しました</td></tr>`;
@@ -132,9 +132,20 @@ function adjustColor(hex, amount) {
 }
 
 function updateStaffFilter() {
+  const staffSet = new Set();
+  allProjects.forEach(p => {
+    if (p.mainPerson && p.mainPerson.trim()) staffSet.add(p.mainPerson.trim());
+    if (p.subPerson  && p.subPerson.trim())  staffSet.add(p.subPerson.trim());
+  });
+  BRANCHES[currentBranch].staff.forEach(s => staffSet.add(s));
+  const sorted = Array.from(staffSet).filter(s=>s&&s!=="その他").sort();
+  if (staffSet.has("その他")) sorted.push("その他");
   const sel = document.getElementById("staffFilter");
-  const staff = BRANCHES[currentBranch].staff;
-  sel.innerHTML=`<option value="">全員表示</option>`+staff.map(s=>`<option value="${s}">${s}</option>`).join("");
+  const current = sel.value;
+  sel.innerHTML = `<option value="">全員表示</option>` +
+    sorted.map(s=>`<option value="${s}">${s}</option>`).join("");
+  if (current && sorted.includes(current)) sel.value = current;
+  else filterPerson = "";
 }
 
 function openDetailModal(id) {

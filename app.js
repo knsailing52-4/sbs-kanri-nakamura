@@ -167,7 +167,7 @@ function initFirestore() {
     .orderBy("goLiveDate","asc")
     .onSnapshot(snapshot=>{
       allProjects = snapshot.docs.map(doc=>({id:doc.id,...doc.data()}));
-      renderProjects(); updateStats();
+      updateStaffFilter(); renderProjects(); updateStats();
     }, err=>{ console.error(err); showToast("データ取得に失敗しました","error"); });
 }
 
@@ -448,10 +448,23 @@ async function executeImport() {
 // 検索・フィルタ
 // =============================================
 function updateStaffFilter() {
+  // Firestoreの案件データから担当者名を動的収集
+  const staffSet = new Set();
+  allProjects.forEach(p => {
+    if (p.mainPerson && p.mainPerson.trim()) staffSet.add(p.mainPerson.trim());
+    if (p.subPerson  && p.subPerson.trim())  staffSet.add(p.subPerson.trim());
+  });
+  // 固定スタッフも追加（未案件でも選択できるように）
+  BRANCHES[currentBranch].staff.forEach(s => staffSet.add(s));
+  const sorted = Array.from(staffSet).filter(s=>s&&s!=="その他").sort();
+  if (staffSet.has("その他")) sorted.push("その他");
   const sel = document.getElementById("staffFilter");
-  const staff = BRANCHES[currentBranch].staff;
-  sel.innerHTML=`<option value="">全員表示</option>`+staff.map(s=>`<option value="${s}">${s}</option>`).join("");
-  filterPerson="";
+  const current = sel.value; // 現在の選択を保持
+  sel.innerHTML = `<option value="">全員表示</option>` +
+    sorted.map(s=>`<option value="${s}">${s}</option>`).join("");
+  // 以前の選択値が引き続き存在すれば復元
+  if (current && sorted.includes(current)) sel.value = current;
+  else filterPerson = "";
 }
 
 // =============================================
