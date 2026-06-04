@@ -34,8 +34,7 @@ let importData = [];
 function switchBranch(branchKey) {
   currentBranch = branchKey;
   const branch = BRANCHES[branchKey];
-  document.querySelector(".app-header").style.background =
-    `linear-gradient(135deg, ${branch.color} 0%, ${adjustColor(branch.color,-20)} 100%)`;
+  // ヘッダーは白固定（ブランドカラー維持）
   document.getElementById("listViewBtn").href = `list.html?branch=${branchKey}`;
   updateStaffFilter();
   initFirestore();

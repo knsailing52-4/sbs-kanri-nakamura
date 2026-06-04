@@ -112,8 +112,7 @@ function initFirestore() {
 function switchBranch(branchKey) {
   currentBranch = branchKey;
   const branch = BRANCHES[branchKey];
-  document.querySelector(".app-header").style.background=
-    `linear-gradient(135deg, ${branch.color} 0%, ${adjustColor(branch.color,-20)} 100%)`;
+  // ヘッダーは白固定
   document.getElementById("backBtn").href=`index.html?branch=${branchKey}`;
   updateStaffFilter();
   filterPerson=""; filterStatus="";
