@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CS一覧 | Customer Success</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="cs.css"/>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+<header class="cs-app-header">
+  <div class="header-inner">
+    <div class="header-title">
+      <img src="logo2.png" alt="Parasight" class="header-logo"/>
+      <span class="cs-branch-tag">CS LIST</span>
+    </div>
+    <div class="cs-header-actions">
+      <a href="cs.html" class="btn-cs-list">← CSカード</a>
+      <a href="index.html" class="btn-cs-top">案件管理</a>
+    </div>
+  </div>
+</header>
+
+<div class="cs-stats-bar">
+  <div class="cs-stats-inner">
+    <div class="cs-stat-item cs-total"><span class="cs-stat-num" id="csTotalStat">0</span><span class="cs-stat-label">件（全体）</span></div>
+    <div class="cs-stat-div"></div>
+    <div class="cs-stat-item cs-green"><span class="cs-stat-num" id="csGreenStat">0</span><span class="cs-stat-label">件 良好</span></div>
+    <div class="cs-stat-item cs-yellow"><span class="cs-stat-num" id="csYellowStat">0</span><span class="cs-stat-label">件 注意</span></div>
+    <div class="cs-stat-item cs-orange"><span class="cs-stat-num" id="csOrangeStat">0</span><span class="cs-stat-label">件 要対応</span></div>
+  </div>
+</div>
+
+<div class="cs-search-bar">
+  <div class="cs-search-inner">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="csSearchInput" class="search-input" placeholder="病院名で検索..."/>
+    </div>
+    <select id="csStaffFilter" class="filter-select"><option value="">全員表示</option></select>
+    <span class="count-label"><span id="csProjectCount">0 件</span>表示中</span>
+  </div>
+</div>
+
+<main class="cs-list-content">
+  <div class="cs-table-wrap">
+    <table class="cs-status-table">
+      <thead>
+        <tr>
+          <th>病院名</th>
+          <th>担当</th>
+          <th>CSステータス</th>
+          <th>状態</th>
+          <th>最終対応日</th>
+          <th>メモ</th>
+        </tr>
+      </thead>
+      <tbody id="csTableBody">
+        <tr><td colspan="6" class="cs-list-loading">読み込み中...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<div id="csDetailModal" class="modal-overlay">
+  <div class="modal-box cs-detail-box">
+    <div class="cs-modal-header">
+      <h2 id="csDetailTitle">CS詳細</h2>
+      <button class="btn-modal-close" onclick="closeCsDetailModal()" style="color:white;">✕</button>
+    </div>
+    <div class="modal-body" id="csDetailBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeCsDetailModal()">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+<script src="firebase-config.js"></script>
+<script src="cs.js"></script>
+</body>
+</html>

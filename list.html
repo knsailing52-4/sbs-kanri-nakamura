@@ -7,7 +7,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="style.css"/>
-  <link rel="stylesheet" href="list.css"/>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 </head>
@@ -17,7 +16,6 @@
   <div class="header-inner">
     <div class="header-title">
       <div style="display:flex;align-items:center;gap:12px;">
-        <a href="index.html" class="btn-back" id="backBtn">← Top</a>
         <img src="logo.png" alt="Parasight" class="header-logo" />
         <span class="header-page-title">全ステータス一覧</span>
       </div>
@@ -34,6 +32,9 @@
           <option value="fukuoka">福岡支店</option>
         </select>
       </div>
+    </div>
+    <div class="header-actions">
+      <a href="index.html" class="btn-back" id="backBtn">← 案件カード</a>
     </div>
   </div>
 </header>

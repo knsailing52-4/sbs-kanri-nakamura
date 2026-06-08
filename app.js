@@ -9,15 +9,15 @@ const TASKS = [
 ];
 
 const BRANCHES = {
-  nagoya:   { label:"名古屋支店", collection:"nagoya_projects",   color:"#1a5cb8", staff:["滝澤 充","田中 美春","齋藤 茂樹","西尾 駿志","萬代 さくら","小澤 聖也","本間 陸","その他"] },
-  sapporo:  { label:"札幌支店",   collection:"sapporo_projects",  color:"#0077b6", staff:["山田 翼","常国 広平","河島 俊","篠川 陽一","吉川 練","その他"] },
-  sendai:   { label:"仙台支店",   collection:"sendai_projects",   color:"#2d6a4f", staff:["村田 祐基","弓掛 年晃","福島 義規","宮川 知己","小坂 冬喜","関堂 崇","その他"] },
-  tokyo:    { label:"東京支店",   collection:"tokyo_projects",    color:"#c0392b", staff:[] },
-  yokohama: { label:"横浜支店",   collection:"yokohama_projects", color:"#8e44ad", staff:[] },
-  saitama:  { label:"さいたま支店", collection:"saitama_projects", color:"#d35400", staff:[] },
-  osaka:    { label:"大阪支店",   collection:"osaka_projects",    color:"#16a085", staff:[] },
-  hiroshima:{ label:"広島支店",   collection:"hiroshima_projects",color:"#c0392b", staff:[] },
-  fukuoka:  { label:"福岡支店",   collection:"fukuoka_projects",  color:"#27ae60", staff:[] },
+  nagoya:   { label:"名古屋支店", collection:"nagoya_projects",   color:"#1a5cb8" },
+  sapporo:  { label:"札幌支店",   collection:"sapporo_projects",  color:"#0077b6" },
+  sendai:   { label:"仙台支店",   collection:"sendai_projects",   color:"#2d6a4f" },
+  tokyo:    { label:"東京支店",   collection:"tokyo_projects",    color:"#c0392b" },
+  yokohama: { label:"横浜支店",   collection:"yokohama_projects", color:"#8e44ad" },
+  saitama:  { label:"さいたま支店", collection:"saitama_projects", color:"#d35400" },
+  osaka:    { label:"大阪支店",   collection:"osaka_projects",    color:"#16a085" },
+  hiroshima:{ label:"広島支店",   collection:"hiroshima_projects",color:"#c0392b" },
+  fukuoka:  { label:"福岡支店",   collection:"fukuoka_projects",  color:"#27ae60" },
 };
 
 const DELETE_PASSWORD = "0000";
@@ -67,6 +67,16 @@ function checkDelay(project) {
   return "";
 }
 
+function normalizeHospitalName(name) {
+  return String(name || "").replace(/\s+/g, "").toLowerCase();
+}
+
+function isDuplicateHospital(project, projects = allProjects) {
+  const name = normalizeHospitalName(project.hospitalName);
+  if (!name) return false;
+  return projects.filter(p => normalizeHospitalName(p.hospitalName) === name).length > 1;
+}
+
 // =============================================
 // カード生成
 // =============================================
@@ -90,6 +100,7 @@ function createCard(project) {
   if (statusClass==="delay") statusBadge=`<span class="badge badge-delay">遅延</span>`;
   else if (statusClass==="warning") statusBadge=`<span class="badge badge-warning">注意</span>`;
   else if (statusClass==="completed") statusBadge=`<span class="badge badge-completed">完了</span>`;
+  const duplicateBadge = isDuplicateHospital(project) ? `<span class="duplicate-badge">重複</span>` : "";
   const dots = TASKS.map((_,i)=>{
     let cls="dot";
     if (i<project.currentTask) cls+=" dot-done";
@@ -100,7 +111,7 @@ function createCard(project) {
     <div class="project-card ${statusClass}" data-id="${project.id}">
       <div class="card-header">
         <div class="card-title-row">
-          <h3 class="hospital-name">${escapeHtml(project.hospitalName)}</h3>
+          <h3 class="hospital-name">${escapeHtml(project.hospitalName)}${duplicateBadge}</h3>
           <div class="card-badges">${statusBadge}</div>
         </div>
         <div class="card-meta">
@@ -273,7 +284,7 @@ function closeModal() { document.getElementById("projectModal").classList.remove
 
 // 担当者入力欄：テキスト入力（datalistで候補表示）
 function populateStaffInputs(mainVal, subVal) {
-  const staff = BRANCHES[currentBranch].staff;
+  const staff = getProjectStaffCandidates();
   ["formMainPerson","formSubPerson"].forEach(id=>{
     const input = document.getElementById(id);
     const listId = id+"List";
@@ -447,16 +458,7 @@ async function executeImport() {
 // 検索・フィルタ
 // =============================================
 function updateStaffFilter() {
-  // Firestoreの案件データから担当者名を動的収集
-  const staffSet = new Set();
-  allProjects.forEach(p => {
-    if (p.mainPerson && p.mainPerson.trim()) staffSet.add(p.mainPerson.trim());
-    if (p.subPerson  && p.subPerson.trim())  staffSet.add(p.subPerson.trim());
-  });
-  // 固定スタッフも追加（未案件でも選択できるように）
-  BRANCHES[currentBranch].staff.forEach(s => staffSet.add(s));
-  const sorted = Array.from(staffSet).filter(s=>s&&s!=="その他").sort();
-  if (staffSet.has("その他")) sorted.push("その他");
+  const sorted = getProjectStaffCandidates();
   const sel = document.getElementById("staffFilter");
   const current = sel.value; // 現在の選択を保持
   sel.innerHTML = `<option value="">全員表示</option>` +
@@ -464,6 +466,17 @@ function updateStaffFilter() {
   // 以前の選択値が引き続き存在すれば復元
   if (current && sorted.includes(current)) sel.value = current;
   else filterPerson = "";
+}
+
+function getProjectStaffCandidates() {
+  const staffSet = new Set();
+  allProjects.forEach(p => {
+    if (p.mainPerson && p.mainPerson.trim()) staffSet.add(p.mainPerson.trim());
+    if (p.subPerson  && p.subPerson.trim())  staffSet.add(p.subPerson.trim());
+  });
+  const sorted = Array.from(staffSet).filter(s=>s&&s!=="その他").sort();
+  if (staffSet.has("その他")) sorted.push("その他");
+  return sorted;
 }
 
 // =============================================

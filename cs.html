@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Customer Success</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="stylesheet" href="cs.css"/>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+<!-- ヘッダー -->
+<header class="cs-app-header">
+  <div class="header-inner">
+    <div class="header-title">
+      <img src="logo2.png" alt="Parasight" class="header-logo"/>
+      <span class="cs-branch-tag">CUSTOMER SUCCESS</span>
+    </div>
+    <div class="cs-header-actions">
+      <a href="cs-list.html" class="btn-cs-list">📊 CS一覧</a>
+      <button class="btn-add-cs" onclick="openCsAddModal()">＋ CS案件登録</button>
+      <a href="index.html" class="btn-back-project">← 案件管理</a>
+    </div>
+  </div>
+</header>
+
+<div class="cs-phase-bar">
+  <div class="cs-phase-inner">
+    <span class="cs-phase-item">支援計画</span><span class="cs-phase-arrow">→</span><span class="cs-phase-item">定着</span><span class="cs-phase-arrow">→</span><span class="cs-phase-item">活用促進</span><span class="cs-phase-arrow">→</span><span class="cs-phase-item">成果創出</span><span class="cs-phase-arrow">→</span><span class="cs-phase-item">拡大</span><span class="cs-phase-arrow">→</span><span class="cs-phase-item">事例創出</span>
+  </div>
+</div>
+
+<!-- 統計バー -->
+<div class="cs-stats-bar">
+  <div class="cs-stats-inner">
+    <div class="cs-stat-item cs-total"><span class="cs-stat-num" id="csTotalStat">0</span><span class="cs-stat-label">件（全体）</span></div>
+    <div class="cs-stat-div"></div>
+    <div class="cs-stat-item cs-green"><span class="cs-stat-num" id="csGreenStat">0</span><span class="cs-stat-label">件 良好</span></div>
+    <div class="cs-stat-item cs-yellow"><span class="cs-stat-num" id="csYellowStat">0</span><span class="cs-stat-label">件 注意</span></div>
+    <div class="cs-stat-item cs-orange"><span class="cs-stat-num" id="csOrangeStat">0</span><span class="cs-stat-label">件 要対応</span></div>
+  </div>
+</div>
+
+<!-- 検索バー -->
+<div class="cs-search-bar">
+  <div class="cs-search-inner">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="csSearchInput" class="search-input" placeholder="病院名で検索..."/>
+    </div>
+    <select id="csStaffFilter" class="filter-select"><option value="">全員表示</option></select>
+    <span class="count-label"><span id="csProjectCount">0 件</span>表示中</span>
+  </div>
+</div>
+
+<!-- メインコンテンツ -->
+<main class="cs-main-content">
+  <div class="cs-grid" id="csProjectList"></div>
+  <div class="empty-state" id="csEmptyState" style="display:none;">
+    <span class="empty-icon">⭐</span>
+    <p>CS案件が見つかりません</p>
+    <p style="font-size:12px;color:#9aa5b4">「CS案件登録」から追加してください</p>
+  </div>
+</main>
+
+<!-- CS登録・編集モーダル -->
+<div id="csModal" class="modal-overlay">
+  <div class="modal-box cs-modal-box">
+    <div class="cs-modal-header">
+      <h2 id="csModalTitle">CS案件 新規登録</h2>
+      <button class="btn-modal-close" onclick="closeCsModal()" style="color:white;">✕</button>
+    </div>
+    <form id="csProjectForm">
+      <div class="modal-body">
+        <input type="hidden" id="csEditId"/>
+
+        <div class="cs-section-title">基本情報</div>
+        <div class="form-group">
+          <label class="form-label">病院名<span class="required">*</span></label>
+          <input type="text" id="csHospitalName" class="form-input" placeholder="例：○○総合病院" required/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">導入病棟名</label>
+          <input type="text" id="csWard" class="form-input" placeholder="例：ICU・3A病棟"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">稼働開始日</label>
+          <input type="date" id="csStartDate" class="form-input"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">稼働終了日（サポートエンド）</label>
+          <input type="date" id="csSupportEndDate" class="form-input"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">担当営業</label>
+          <input type="text" id="csSalesPerson" class="form-input" placeholder="担当者名を入力（候補から選択も可）" autocomplete="off"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">担当CS</label>
+          <input type="text" id="csPerson" class="form-input" placeholder="担当CS名を入力（候補から選択も可）" autocomplete="off"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">SOL PM（導入担当）</label>
+          <input type="text" id="csSolPm" class="form-input" placeholder="例：田中 一郎"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">システム種類 1</label>
+          <select id="csSystemType1" class="form-select">
+            <option value="">-- 選択 --</option>
+            <option value="SBS">SBS</option>
+            <option value="SBS-Lite">SBS-Lite</option>
+            <option value="Connectハイブリット">Connectハイブリット</option>
+            <option value="Connectオンプレ">Connectオンプレ</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">システム種類 2</label>
+          <select id="csSystemType2" class="form-select">
+            <option value="">-- 選択 --</option>
+            <option value="SBS">SBS</option>
+            <option value="SBS-Lite">SBS-Lite</option>
+            <option value="Connectハイブリット">Connectハイブリット</option>
+            <option value="Connectオンプレ">Connectオンプレ</option>
+          </select>
+        </div>
+
+        <div class="cs-section-title">導入製品</div>
+        <div class="form-group">
+          <div class="toggle-group">
+            <label class="toggle-item"><input type="checkbox" id="csHasBedside"/> BS端末</label>
+            <label class="toggle-item"><input type="checkbox" id="csHasBedNavi"/> ベッドナビ</label>
+            <label class="toggle-item"><input type="checkbox" id="csHasNemiri"/> 眠りSCAN</label>
+            <label class="toggle-item"><input type="checkbox" id="csHasRisha"/> 離床CATCH</label>
+            <label class="toggle-item"><input type="checkbox" id="csHasVital"/> バイタル連携</label>
+            <label class="toggle-item"><input type="checkbox" id="csHasEhr"/> EHR連携</label>
+            <label class="toggle-item"><input type="checkbox" id="csHasNurse"/> NC情報連携</label>
+            <label class="toggle-item"><input type="checkbox" id="csHasNcNotify"/> NC通知連携</label>
+          </div>
+        </div>
+
+        <div class="cs-section-title">病床移動運用</div>
+        <div class="form-group">
+          <label class="form-label">病床移動時の運用</label>
+          <select id="csMoveOp" class="form-select">
+            <option value="">-- 選択 --</option>
+            <option value="床頭台ごと移動">床頭台ごと移動</option>
+            <option value="床頭台移動なし">床頭台移動なし</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">病床番号変更担当職種</label>
+          <input type="text" id="csBedNumStaff" class="form-input" placeholder="例：看護師"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">床頭台移動担当職種</label>
+          <input type="text" id="csBedMoveStaff" class="form-input" placeholder="例：看護助手"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">メモ</label>
+          <textarea id="csMemo" class="form-textarea" rows="4" placeholder="メモを入力してください"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeCsModal()">キャンセル</button>
+        <button type="submit" class="btn" style="background:var(--cs-primary);color:white;padding:9px 24px;font-size:13px;font-weight:700;border:none;border-radius:6px;cursor:pointer;">保存</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- 訪問追加モーダル -->
+<div id="visitModal" class="modal-overlay">
+  <div class="modal-box" style="max-width:460px;">
+    <div class="cs-modal-header">
+      <div>
+        <h2 id="visitNumLabel">第 1 回</h2>
+        <p id="visitHospitalLabel" style="font-size:12px;opacity:.85;margin-top:2px;"></p>
+      </div>
+      <button class="btn-modal-close" onclick="closeVisitModal()" style="color:white;">✕</button>
+    </div>
+    <form id="visitForm">
+      <div class="modal-body">
+        <input type="hidden" id="visitProjectId"/>
+        <input type="hidden" id="visitEditIndex" value="-1"/>
+        <div class="form-group">
+          <label class="form-label">ステータス</label>
+          <select id="visitStatus" class="status-select-cs">
+            <option value="支援計画">支援計画</option>
+            <option value="定着">定着</option>
+            <option value="活用促進">活用促進</option>
+            <option value="成果創出">成果創出</option>
+            <option value="拡大">拡大</option>
+            <option value="事例創出">事例創出</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">訪問日/対応日（開始）</label>
+          <input type="date" id="visitStartDate" class="form-input"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">訪問日/対応日（終了）</label>
+          <input type="date" id="visitEndDate" class="form-input"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">フリー入力</label>
+          <textarea id="visitFreeText" class="form-textarea" rows="4" placeholder="対応内容・メモを入力..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeVisitModal()">キャンセル</button>
+        <button type="submit" class="btn" style="background:var(--cs-primary);color:white;padding:9px 24px;font-size:13px;font-weight:700;border:none;border-radius:6px;cursor:pointer;">追加</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- CS詳細モーダル -->
+<div id="csDetailModal" class="modal-overlay">
+  <div class="modal-box cs-detail-box">
+    <div class="cs-modal-header">
+      <h2 id="csDetailTitle">CS詳細</h2>
+      <button class="btn-modal-close" onclick="closeCsDetailModal()" style="color:white;">✕</button>
+    </div>
+    <div class="modal-body" id="csDetailBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeCsDetailModal()">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- 削除確認モーダル（共通） -->
+<div id="csDeleteModal" class="modal-overlay">
+  <div class="modal-box delete-modal-box">
+    <div class="modal-header">
+      <h2>CS案件の削除</h2>
+      <button class="btn-modal-close" onclick="closeCsDeleteModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="delete-info">⚠️ この操作は取り消せません。<br/>削除パスワードを入力してください。</div>
+      <div class="form-group">
+        <label class="form-label">パスワード</label>
+        <input type="password" id="csDeletePassword" class="form-input" placeholder="削除パスワードを入力" autocomplete="off"/>
+      </div>
+      <div class="error-text" id="csDeleteError"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeCsDeleteModal()">キャンセル</button>
+      <button class="btn btn-delete" onclick="confirmCsDelete()">削除する</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="firebase-config.js"></script>
+<script src="cs.js"></script>
+</body>
+</html>

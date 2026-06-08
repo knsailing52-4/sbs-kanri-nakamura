@@ -2,19 +2,20 @@
   background: #f5f5f7;
   color: #1d1d1f;
   border: none;
-  border-radius: 20px;
+  border-radius: 6px;
   padding: 8px 14px;
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: background .15s;
+  transition: background .15s, transform .1s, box-shadow .15s;
   white-space: nowrap;
   font-family: inherit;
+  box-shadow: 0 2px 0 #d7d7de, 0 3px 8px rgba(0,0,0,.08);
 }
-.btn-import:hover { background: #e8e8ed; }
+.btn-import:hover { background: #e8e8ed; transform: translateY(-1px); box-shadow: 0 3px 0 #cfd0d8, 0 5px 12px rgba(0,0,0,.10); }
 
 /* =============================================
-   さいたま支店 案件管理ツール - style.css
+   案件管理ツール - style.css
    ============================================= */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -160,7 +161,7 @@ body {
   background: #0071e3;
   color: #fff;
   border: none;
-  border-radius: 20px;
+  border-radius: 6px;
   padding: 8px 16px;
   font-weight: 500;
   font-size: 13px;
@@ -169,10 +170,11 @@ body {
   align-items: center;
   gap: 6px;
   white-space: nowrap;
-  transition: background .15s, transform .1s;
+  transition: background .15s, transform .1s, box-shadow .15s;
   font-family: inherit;
+  box-shadow: 0 2px 0 #005fbd, 0 3px 8px rgba(0,113,227,.22);
 }
-.btn-add-main:hover { background: #0077ed; transform: translateY(-1px); }
+.btn-add-main:hover { background: #0077ed; transform: translateY(-1px); box-shadow: 0 3px 0 #005fbd, 0 5px 12px rgba(0,113,227,.26); }
 .btn-add-main:active { background: #006edb; transform: translateY(0); }
 
 /* フォームセクションタイトル */
@@ -191,15 +193,85 @@ body {
   background: #f5f5f7;
   color: #1d1d1f;
   text-decoration: none;
-  border-radius: 20px;
+  border-radius: 6px;
   padding: 8px 14px;
   font-size: 13px;
   font-weight: 500;
-  transition: background .15s;
+  transition: background .15s, transform .1s, box-shadow .15s;
   white-space: nowrap;
   font-family: inherit;
+  box-shadow: 0 2px 0 #d7d7de, 0 3px 8px rgba(0,0,0,.08);
 }
-.btn-list-view:hover { background: #e8e8ed; }
+.btn-list-view:hover { background: #e8e8ed; transform: translateY(-1px); box-shadow: 0 3px 0 #cfd0d8, 0 5px 12px rgba(0,0,0,.10); }
+
+.btn-cs-entry {
+  background: #fff1f6;
+  color: #9d4c6e;
+  border: 1px solid #ffd8e6;
+  text-decoration: none;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background .15s, transform .1s, box-shadow .15s;
+  white-space: nowrap;
+  font-family: inherit;
+  box-shadow: 0 2px 0 #eeb6ca, 0 3px 8px rgba(239,149,181,.20);
+}
+.btn-cs-entry:hover {
+  background: #ffe5ef;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 0 #e7a8c0, 0 5px 12px rgba(239,149,181,.24);
+}
+
+.btn-back {
+  background: rgba(255,255,255,.92);
+  color: var(--blue-dark);
+  border: 1px solid rgba(255,255,255,.55);
+  text-decoration: none;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background .15s, transform .1s, box-shadow .15s;
+  white-space: nowrap;
+  box-shadow: 0 2px 0 rgba(15,61,130,.25), 0 3px 8px rgba(0,0,0,.10);
+}
+.btn-back:hover { background: var(--white); transform: translateY(-1px); box-shadow: 0 3px 0 rgba(15,61,130,.28), 0 5px 12px rgba(0,0,0,.12); }
+
+.list-content { max-width: 1400px; margin: 0 auto; padding: 20px; }
+.table-wrap { background: var(--white); border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.status-table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 860px; }
+.status-table thead { background: var(--blue-dark); color: var(--white); position: sticky; top: 0; z-index: 10; }
+.status-table th { padding: 12px 14px; text-align: left; font-size: 12px; font-weight: 600; letter-spacing: .04em; white-space: nowrap; }
+.status-table tbody tr { border-bottom: 1px solid var(--gray-100); transition: background .12s; }
+.status-table tbody tr:last-child { border-bottom: none; }
+.status-table tbody tr:hover { background: var(--gray-50); }
+.status-table td { padding: 11px 14px; color: var(--gray-800); vertical-align: middle; }
+.table-row-delay { background: #fff8f8; }
+.table-row-warning { background: #fffdf0; }
+.table-row-normal { background: var(--white); }
+.table-row-completed { background: var(--green-bg); opacity: .85; }
+.table-row-delay:hover { background: #ffeeed; }
+.table-row-warning:hover { background: #fff9e0; }
+.table-row-completed:hover { background: #d8eed8; }
+.badge-normal { background: #e8f0fc; color: var(--blue-dark); }
+.col-status { width: 160px; }
+.col-hospital { width: 180px; }
+.col-live { width: 110px; white-space: nowrap; }
+.col-days { width: 90px; }
+.col-task { width: 220px; }
+.col-main { width: 100px; }
+.col-sub { width: 100px; }
+.col-memo { min-width: 120px; }
+.cell-hospital { font-weight: 700; color: var(--gray-800); }
+.cell-task { color: var(--blue-dark); font-weight: 500; }
+.cell-memo { color: var(--gray-600); font-size: 12px; max-width: 200px; white-space: pre-wrap; word-break: break-all; }
+.days-past { color: var(--red); font-weight: 600; }
+.days-today { color: var(--green); font-weight: 700; }
+.loading-cell { text-align: center; padding: 48px; color: var(--gray-400); font-size: 14px; }
+.cell-clickable { cursor: pointer; color: var(--blue) !important; text-decoration: underline; text-underline-offset: 2px; }
+.cell-clickable:hover { color: var(--accent) !important; }
 
 /* --- 工程一覧バー --- */
 .task-list-bar {
@@ -415,6 +487,22 @@ body {
   color: var(--gray-800);
   line-height: 1.3;
   flex: 1;
+}
+
+.duplicate-badge {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #fff1f0;
+  color: #c0392b;
+  border: 1px solid #f3b5b0;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.4;
+  white-space: nowrap;
 }
 
 .card-badges { display: flex; gap: 4px; flex-shrink: 0; }
@@ -803,18 +891,24 @@ body {
     gap: 6px !important;
     justify-content: stretch !important;
   }
-  .btn-list-view, .btn-import, .btn-add-main {
+  .btn-list-view, .btn-cs-entry, .btn-import, .btn-add-main {
     flex: 1 !important;
     font-size: 11px !important;
     padding: 7px 4px !important;
     text-align: center !important;
     justify-content: center !important;
     white-space: nowrap !important;
-    border-radius: 20px !important;
+    border-radius: 6px !important;
   }
 
-  /* 工程バー非表示 */
-  .task-list-bar { display: none; }
+  /* 工程バー */
+  .task-list-bar {
+    display: block;
+    padding: 7px 12px;
+  }
+  .task-list-inner {
+    min-width: max-content;
+  }
 
   /* 統計バー */
   .stats-inner { gap: 10px; padding: 8px 12px; flex-wrap: wrap; }
